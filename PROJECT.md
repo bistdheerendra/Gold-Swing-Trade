@@ -3,8 +3,8 @@
 **Location:** `Desktop/Gold Trader`  
 **Product name:** Gold Swing AI  
 **Folder name:** Gold Trader  
-**Current phase:** **11.8 — Candle-Level ML Labeling (complete — research; weak signal)**  
-**Next phase:** **Blocked** — Phase 12 still NO-GO; candle ML not wired to live signals  
+**Current phase:** **11.9 — Liquidity Sweep Investigation (complete — inconclusive; no rule change)**  
+**Next phase:** **Blocked** — Phase 12 still NO-GO; accumulate more PAXGUSD history before structural edits  
 **Last updated:** 2026-08-09
 
 ---
@@ -78,6 +78,7 @@ Market Data (real free-tier)  ← Phase 11.5
   → Strategy Recalibration       ← Phase 11.6 (NO-GO)
   → Diagnosis Review             ← Phase 11.7 (no rewrite; NO-GO)
   → Candle-Level ML Labeling     ← Phase 11.8 (research; weak skill)
+  → Liquidity Sweep Investigation← Phase 11.9 (inconclusive; no rule change)
   → Paper Trading + Alerts       ← Phase 12 (blocked)
   → Production Hardening
 ```
@@ -140,6 +141,7 @@ Gold Trader/
 | 11.6 | Strategy Recalibration on Real Data | **COMPLETE — NO-GO** |
 | 11.7 | Diagnosis Review + Conditional Rule Revision | **COMPLETE — no rewrite; NO-GO** |
 | 11.8 | Candle-Level ML Labeling | **COMPLETE — research; weak skill** |
+| 11.9 | Liquidity Sweep Investigation | **COMPLETE — inconclusive; no rule change** |
 | 12 | Paper Trading + Live Monitoring + Alerts | **BLOCKED** |
 | 13 | Production Hardening & Deployment | Pending |
 
@@ -246,6 +248,13 @@ See [docs/roadmap.md](docs/roadmap.md) for full phase descriptions.
 - Stored under `data/ml_datasets_candle/` — Phase 8 trade-outcome datasets untouched
 - Retrained logistic / RF / GB; held-out TEST beats majority by only ~2.7pp accuracy — **not wired** to Phase 6/10
 - Docs: [docs/ml-labeling.md](docs/ml-labeling.md), [docs/phase-11.8-candle-ml-results.md](docs/phase-11.8-candle-ml-results.md)
+
+### Phase 11.9 — Liquidity Sweep Investigation (**inconclusive; no rule change**)
+- Quantified sweep as score-gap vs sole blocker on real PAXGUSD TRAIN+VAL
+- Base rate of reclaim sweeps is low on quiet gold; lookback widen no-op; 15m fallback hurt VAL expectancy
+- **No** live Phase 6 / SMC change
+- Docs: [docs/phase-11.9-liquidity-sweep-investigation.md](docs/phase-11.9-liquidity-sweep-investigation.md)
+- Script: `backend/scripts/phase_11_9_liquidity_sweep.py`
 
 ---
 
@@ -408,6 +417,7 @@ Gold-themed trading terminal with:
 | [docs/phase-11.7-diagnosis-review.md](docs/phase-11.7-diagnosis-review.md) | Why 11.6 failed; no-rewrite gate |
 | [docs/ml-labeling.md](docs/ml-labeling.md) | Phase 11.8 triple-barrier candle labels |
 | [docs/phase-11.8-candle-ml-results.md](docs/phase-11.8-candle-ml-results.md) | Candle-level dataset + model results |
+| [docs/phase-11.9-liquidity-sweep-investigation.md](docs/phase-11.9-liquidity-sweep-investigation.md) | Phase 11.9 sweep condition investigation |
 | [docs/chart.md](docs/chart.md) | Chart layer |
 | [docs/technical-analysis.md](docs/technical-analysis.md) | TA engine |
 | [docs/smc-rules.md](docs/smc-rules.md) | Exact SMC definitions |
@@ -438,13 +448,14 @@ Gold-themed trading terminal with:
 11. **Phase 11.6 — real PAXGUSD rule strategy is not Phase-12-ready:** expanded max-history ALL backtest is only weakly positive (~+0.07R pre-recal, ~+0.01R after a rejected vol-penalty tweak, n≈34–40); held-out TEST is **−0.39R on n=6**. Delta history starts ~2026-02-19 — sample remains thin. Default `StrategyConfig` thresholds unchanged; candidate `config_real_recal.json` is audit-only.  
 12. Phase 11.5 “0 trades” on Phase 10 TEST was largely a **measurement bug** (warmup applied after slicing a short TEST window); fixed in 11.6 via full-series context + `chronological_eval_bounds`. After the fix, TEST produces trades but still loses on average.  
 13. **Phase 11.7 — insufficient evidence for a Phase 6 structural rewrite:** win rate (~33–38%) and payoff (TEST PF ~0.55) both look weak, and blockers *suggest* location/MTF/RR friction, but n is too small to localize a safe structural change. Forcing confluence edits now would be overfitting with a bigger blast radius than threshold tweaks. Prefer more history (and/or separate XAUUSD reference study) before reopening rule surgery.  
-14. **Phase 11.8 — candle-level ML is research-only:** full-history triple-barrier dataset (~16 294 rows) replaces the thin ~34 trade-outcome sample for *ML research*, but held-out directional skill is weak (~2.7pp over majority). Artifacts live in `data/ml_datasets_candle/` and `artifacts/ml_candle/`. **Not** wired into Phase 6/10. UI `bar_limit=220` remains preview-only.
+14. **Phase 11.8 — candle-level ML is research-only:** full-history triple-barrier dataset (~16 294 rows) replaces the thin ~34 trade-outcome sample for *ML research*, but held-out directional skill is weak (~2.7pp over majority). Artifacts live in `data/ml_datasets_candle/` and `artifacts/ml_candle/`. **Not** wired into Phase 6/10. UI `bar_limit=220` remains preview-only.  
+15. **Phase 11.9 — liquidity sweep investigation inconclusive:** on TRAIN+VAL, sweep is unmet on ~78% of high-score no-trade samples (15-pt score gap) but sole unmet only ~6%. 1H reclaim sweeps are sparse (avg ~138 bars between unique events; ~23% of samples have any sweep in 40 bars). Widening `recent_sweep_bars` did nothing; 1H→15m fallback added trades but worsened VAL expectancy. **No production rule change.** Live `✗ Liquidity Sweep` on NO_TRADE/INVALIDATED cards is often a listed unmet condition, not a hard `liquidity_required` veto.
 
 ---
 
 ## 15. Next step
 
-Phase 11.8 is complete. **Phase 12 remains NO-GO.** Candle ML does not clear paper-trading gates.
+Phase 11.9 is complete (investigation only). **Phase 12 remains NO-GO.** Do not loosen liquidity sweep in production without a pre-registered recalibration pass.
 
 Do **not** run `START PHASE 12`. Do **not** auto-wire candle models into live signals.
 

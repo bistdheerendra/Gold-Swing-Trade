@@ -1,0 +1,466 @@
+{
+  "generated_at": "2026-08-09T12:58:18.550987+00:00",
+  "definition": {
+    "smc": {
+      "liq_min_touches": 2,
+      "liq_cluster_tolerance": 0.15,
+      "liq_lookback_swings": 20,
+      "sweep_require_close_reclaim": true,
+      "sweep_max_bars_for_reclaim": 3,
+      "sweep_min_penetration": 0.0
+    },
+    "strategy": {
+      "liquidity_sweep_weight": 15,
+      "liquidity_required": false,
+      "recent_sweep_bars": 40,
+      "entry_confirm_bars": 24,
+      "signal_threshold": 65,
+      "source_tf_rule": "smc_1h or smc_15m (no fallback if 1H present)"
+    }
+  },
+  "audit": {
+    "samples": 300,
+    "errors": 0,
+    "diagnose_window": "TRAIN+VALIDATION only (TEST untouched)",
+    "sample_indices": 300,
+    "signal_counts": {
+      "NO_TRADE": 135,
+      "WAIT": 145,
+      "BUY": 9,
+      "SELL": 11
+    },
+    "unmet_condition_counts_all_samples": {
+      "liquidity_sweep": 266,
+      "ob_demand_supply": 239,
+      "premium_discount": 161,
+      "setup_1h": 121,
+      "entry_15m": 47,
+      "structure_4h": 37,
+      "higher_tf_bias": 12,
+      "fvg": 7
+    },
+    "sole_unmet_blocker_counts_all_samples": {
+      "liquidity_sweep": 9,
+      "ob_demand_supply": 2,
+      "premium_discount": 2
+    },
+    "high_score_ge_threshold": {
+      "n": 131,
+      "sweep_unmet": 105,
+      "sweep_unmet_pct": 80.15,
+      "sole_unmet_sweep": 9,
+      "sole_unmet_sweep_pct": 6.87,
+      "sweep_among_multiple_unmet": 96,
+      "other_sole_blockers": {
+        "ob_demand_supply": 2,
+        "premium_discount": 2
+      }
+    },
+    "high_score_no_trade": {
+      "n": 111,
+      "sweep_unmet": 87,
+      "sweep_unmet_pct": 78.38,
+      "sole_unmet_sweep": 7,
+      "sole_unmet_sweep_pct": 6.31,
+      "sweep_among_multiple_unmet": 80,
+      "other_sole_blockers": {
+        "ob_demand_supply": 2,
+        "premium_discount": 1
+      }
+    },
+    "otherwise_qualifying": {
+      "n": 284,
+      "sweep_unmet": 258,
+      "sweep_unmet_pct": 90.85,
+      "sole_unmet_sweep": 9,
+      "sole_unmet_sweep_pct": 3.17,
+      "sweep_among_multiple_unmet": 249,
+      "other_sole_blockers": {
+        "ob_demand_supply": 2,
+        "premium_discount": 2
+      }
+    },
+    "otherwise_qualifying_no_trade": {
+      "n": 264,
+      "sweep_unmet": 240,
+      "sweep_unmet_pct": 90.91,
+      "sole_unmet_sweep": 7,
+      "sole_unmet_sweep_pct": 2.65,
+      "sweep_among_multiple_unmet": 233,
+      "other_sole_blockers": {
+        "ob_demand_supply": 2,
+        "premium_discount": 1
+      }
+    },
+    "hypothetical_score_clear_if_sweep_met_among_high_score_no_trade": 87,
+    "note": "liquidity_required=False in StrategyConfig \u2014 missing sweep costs 15 score points but is not a hard veto by itself. INVALIDATED on the UI maps from NO_TRADE status."
+  },
+  "base_rate_1h": {
+    "timeframe": "1h",
+    "bars_in_train_val": 4097,
+    "smc_sample_points": 122,
+    "total_confirmed_sweeps_unique": 27,
+    "bullish_sweeps": 0,
+    "bearish_sweeps": 0,
+    "sweeps_per_100_bars": 0.659,
+    "avg_bars_between_sweeps": 137.54,
+    "median_bars_between_sweeps": 112.0,
+    "pct_sample_bars_with_any_sweep_in_lookback": {
+      "40": 22.95,
+      "80": 24.59,
+      "120": 24.59
+    },
+    "pct_sample_bars_with_directional_sweep_in_lookback": {
+      "bullish_40": 11.48,
+      "bearish_40": 11.48,
+      "bullish_80": 12.3,
+      "bearish_80": 13.93
+    },
+    "lookback_sample_n": 122,
+    "smc_defaults": {
+      "liq_min_touches": 2,
+      "liq_cluster_tolerance": 0.15,
+      "liq_lookback_swings": 20,
+      "sweep_require_close_reclaim": true,
+      "sweep_max_bars_for_reclaim": 3,
+      "sweep_min_penetration": 0.0
+    },
+    "strategy_recent_sweep_bars_default": 40,
+    "note": "Strategy uses smc_1h OR smc_15m (1H preferred when present) with recent_sweep_bars lookback \u2014 no 15m fallback if 1H exists but is empty. liq_cluster_tolerance=0.15 (absolute $) is tight vs ~$4300\u20135000 gold."
+  },
+  "base_rate_15m": {
+    "timeframe": "15m",
+    "bars_in_train_val": 16382,
+    "smc_sample_points": 121,
+    "total_confirmed_sweeps_unique": 47,
+    "bullish_sweeps": 0,
+    "bearish_sweeps": 0,
+    "sweeps_per_100_bars": 0.2869,
+    "avg_bars_between_sweeps": 323.04,
+    "median_bars_between_sweeps": 256.0,
+    "pct_sample_bars_with_any_sweep_in_lookback": {
+      "40": 24.79,
+      "80": 32.23,
+      "120": 32.23
+    },
+    "pct_sample_bars_with_directional_sweep_in_lookback": {
+      "bullish_40": 13.22,
+      "bearish_40": 13.22,
+      "bullish_80": 15.7,
+      "bearish_80": 20.66
+    },
+    "lookback_sample_n": 121,
+    "smc_defaults": {
+      "liq_min_touches": 2,
+      "liq_cluster_tolerance": 0.15,
+      "liq_lookback_swings": 20,
+      "sweep_require_close_reclaim": true,
+      "sweep_max_bars_for_reclaim": 3,
+      "sweep_min_penetration": 0.0
+    },
+    "strategy_recent_sweep_bars_default": 40,
+    "note": "Strategy uses smc_1h OR smc_15m (1H preferred when present) with recent_sweep_bars lookback \u2014 no 15m fallback if 1H exists but is empty. liq_cluster_tolerance=0.15 (absolute $) is tight vs ~$4300\u20135000 gold."
+  },
+  "volatility": {
+    "rsi": {
+      "n": 81,
+      "p10": 34.3916,
+      "p50": 49.1298,
+      "p90": 66.8028,
+      "mean": 48.9181
+    },
+    "adx": {
+      "n": 81,
+      "p10": 15.6372,
+      "p50": 22.7394,
+      "p90": 40.6979,
+      "mean": 25.3252
+    },
+    "atr_pct": {
+      "n": 81,
+      "p10": 0.039,
+      "p50": 0.1556,
+      "p90": 0.2853,
+      "mean": 0.1629
+    },
+    "phase_11_7_reference": {
+      "adx_p50": 23.3,
+      "atr_pct_p50": 0.16,
+      "rsi_p50": 49.1
+    }
+  },
+  "sensitivity": {
+    "split": "TRAIN and VALIDATION only \u2014 TEST not run",
+    "variants": [
+      {
+        "id": "V0_baseline",
+        "description": "Default recent_sweep_bars=40; 1H preferred (no 15m fallback)",
+        "recent_sweep_bars": 40,
+        "fallback_15m": false,
+        "train": {
+          "trades_entered": 22,
+          "total_signals": 27,
+          "signals_expired": 5,
+          "win_rate": 0.409091,
+          "expectancy_r": 0.110699,
+          "profit_factor": 1.162522,
+          "max_drawdown_pct": 5.359,
+          "net_profit_r": 2.435388,
+          "average_r": 0.110699,
+          "final_equity": 30730.6164
+        },
+        "validation": {
+          "trades_entered": 16,
+          "total_signals": 21,
+          "signals_expired": 4,
+          "win_rate": 0.375,
+          "expectancy_r": 1.429664,
+          "profit_factor": 3.012962,
+          "max_drawdown_pct": 6.5364,
+          "net_profit_r": 22.874618,
+          "average_r": 1.429664,
+          "final_equity": 36862.3854
+        }
+      },
+      {
+        "id": "V1_lookback_80",
+        "description": "Widen recent_sweep_bars 40\u219280 (~80h on 1H)",
+        "recent_sweep_bars": 80,
+        "fallback_15m": false,
+        "train": {
+          "trades_entered": 22,
+          "total_signals": 28,
+          "signals_expired": 6,
+          "win_rate": 0.409091,
+          "expectancy_r": 0.110699,
+          "profit_factor": 1.162522,
+          "max_drawdown_pct": 5.359,
+          "net_profit_r": 2.435388,
+          "average_r": 0.110699,
+          "final_equity": 30730.6164
+        },
+        "validation": {
+          "trades_entered": 16,
+          "total_signals": 21,
+          "signals_expired": 4,
+          "win_rate": 0.375,
+          "expectancy_r": 1.429664,
+          "profit_factor": 3.012962,
+          "max_drawdown_pct": 6.5364,
+          "net_profit_r": 22.874618,
+          "average_r": 1.429664,
+          "final_equity": 36862.3854
+        }
+      },
+      {
+        "id": "V2_lookback_120",
+        "description": "Widen recent_sweep_bars 40\u2192120 (~5 days on 1H)",
+        "recent_sweep_bars": 120,
+        "fallback_15m": false,
+        "train": {
+          "trades_entered": 22,
+          "total_signals": 28,
+          "signals_expired": 6,
+          "win_rate": 0.409091,
+          "expectancy_r": 0.110699,
+          "profit_factor": 1.162522,
+          "max_drawdown_pct": 5.359,
+          "net_profit_r": 2.435388,
+          "average_r": 0.110699,
+          "final_equity": 30730.6164
+        },
+        "validation": {
+          "trades_entered": 16,
+          "total_signals": 21,
+          "signals_expired": 4,
+          "win_rate": 0.375,
+          "expectancy_r": 1.429664,
+          "profit_factor": 3.012962,
+          "max_drawdown_pct": 6.5364,
+          "net_profit_r": 22.874618,
+          "average_r": 1.429664,
+          "final_equity": 36862.3854
+        }
+      },
+      {
+        "id": "V3_1h_then_15m_fallback",
+        "description": "Keep recent_sweep_bars=40 but if 1H has no directional sweep, fall back to 15m (mirrors BOS/CHoCH fallback). Research patch only.",
+        "recent_sweep_bars": 40,
+        "fallback_15m": true,
+        "train": {
+          "trades_entered": 25,
+          "total_signals": 31,
+          "signals_expired": 6,
+          "win_rate": 0.44,
+          "expectancy_r": 0.165535,
+          "profit_factor": 1.256258,
+          "max_drawdown_pct": 5.2757,
+          "net_profit_r": 4.138372,
+          "average_r": 0.165535,
+          "final_equity": 31241.5116
+        },
+        "validation": {
+          "trades_entered": 18,
+          "total_signals": 23,
+          "signals_expired": 4,
+          "win_rate": 0.333333,
+          "expectancy_r": 1.154695,
+          "profit_factor": 2.544885,
+          "max_drawdown_pct": 7.5773,
+          "net_profit_r": 20.784518,
+          "average_r": 1.154695,
+          "final_equity": 36235.3554
+        }
+      },
+      {
+        "id": "V4_lookback_80_plus_fallback",
+        "description": "recent_sweep_bars=80 + 1H\u219215m fallback (most permissive tried)",
+        "recent_sweep_bars": 80,
+        "fallback_15m": true,
+        "train": {
+          "trades_entered": 27,
+          "total_signals": 34,
+          "signals_expired": 7,
+          "win_rate": 0.407407,
+          "expectancy_r": 0.074652,
+          "profit_factor": 1.110312,
+          "max_drawdown_pct": 5.3811,
+          "net_profit_r": 2.015615,
+          "average_r": 0.074652,
+          "final_equity": 30604.6845
+        },
+        "validation": {
+          "trades_entered": 18,
+          "total_signals": 23,
+          "signals_expired": 4,
+          "win_rate": 0.333333,
+          "expectancy_r": 1.154695,
+          "profit_factor": 2.544885,
+          "max_drawdown_pct": 7.5773,
+          "net_profit_r": 20.784518,
+          "average_r": 1.154695,
+          "final_equity": 36235.3554
+        }
+      }
+    ],
+    "unblock_estimates_high_score_no_trade_sweep_unmet_pct": {
+      "V0_baseline": 78.26,
+      "V1_lookback_80": 75.36,
+      "V3_1h_then_15m_fallback": 50.59
+    },
+    "audits_ref": {
+      "V0": {
+        "high_score_no_trade": {
+          "n": 69,
+          "sweep_unmet": 54,
+          "sweep_unmet_pct": 78.26,
+          "sole_unmet_sweep": 7,
+          "sole_unmet_sweep_pct": 10.14,
+          "sweep_among_multiple_unmet": 47,
+          "other_sole_blockers": {
+            "ob_demand_supply": 1
+          }
+        },
+        "signal_counts": {
+          "NO_TRADE": 79,
+          "WAIT": 103,
+          "BUY": 6,
+          "SELL": 12
+        }
+      },
+      "V1": {
+        "high_score_no_trade": {
+          "n": 69,
+          "sweep_unmet": 52,
+          "sweep_unmet_pct": 75.36,
+          "sole_unmet_sweep": 6,
+          "sole_unmet_sweep_pct": 8.7,
+          "sweep_among_multiple_unmet": 46,
+          "other_sole_blockers": {
+            "ob_demand_supply": 1
+          }
+        },
+        "signal_counts": {
+          "NO_TRADE": 79,
+          "WAIT": 103,
+          "BUY": 6,
+          "SELL": 12
+        }
+      },
+      "V3": {
+        "high_score_no_trade": {
+          "n": 85,
+          "sweep_unmet": 43,
+          "sweep_unmet_pct": 50.59,
+          "sole_unmet_sweep": 7,
+          "sole_unmet_sweep_pct": 8.24,
+          "sweep_among_multiple_unmet": 36,
+          "other_sole_blockers": {
+            "ob_demand_supply": 4,
+            "setup_1h": 2,
+            "structure_4h": 1
+          }
+        },
+        "signal_counts": {
+          "NO_TRADE": 94,
+          "WAIT": 87,
+          "BUY": 7,
+          "SELL": 12
+        }
+      }
+    }
+  },
+  "conclusion": {
+    "label": "inconclusive",
+    "statement": "Inconclusive for a production change \u2014 leave the live definition as-is for now. Confirmed reclaim sweeps are genuinely uncommon on quiet real PAXGUSD (1H avg gap~137.54 bars; any-sweep-in-40~22.95%), so the condition is unmet on ~78.38% of high-score no-trade samples as a **15-point score gap**. But it is rarely the *sole* unmet condition (~6.31%), and sensitivity checks did not find a clean expectancy win: widening `recent_sweep_bars` (40\u219280\u2192120) changed nothing (1H still empty), while 1H\u219215m fallback added a few trades and **worsened** VALIDATION expectancy. That pattern fits 'rare structure + score friction' more than a proven miscalibration bug. Re-open only with more history or a pre-registered TRAIN/VAL\u2192TEST protocol.",
+    "key_numbers": {
+      "high_score_no_trade_sweep_unmet_pct": 78.38,
+      "high_score_no_trade_sole_sweep_pct": 6.31,
+      "otherwise_qualifying_no_trade_sweep_unmet_pct": 90.91,
+      "1h_avg_bars_between_sweeps": 137.54,
+      "1h_unique_sweeps": 27,
+      "1h_pct_sample_any_sweep_in_40": 22.95,
+      "1h_pct_bars_bullish_sweep_in_40": 11.48,
+      "sensitivity_improved_vs_baseline_val": [],
+      "sensitivity_worsened_vs_baseline": [
+        "V3_1h_then_15m_fallback",
+        "V4_lookback_80_plus_fallback"
+      ],
+      "variant_expectancies": {
+        "V0_baseline": {
+          "train_n": 22,
+          "train_exp": 0.110699,
+          "val_n": 16,
+          "val_exp": 1.429664
+        },
+        "V1_lookback_80": {
+          "train_n": 22,
+          "train_exp": 0.110699,
+          "val_n": 16,
+          "val_exp": 1.429664
+        },
+        "V2_lookback_120": {
+          "train_n": 22,
+          "train_exp": 0.110699,
+          "val_n": 16,
+          "val_exp": 1.429664
+        },
+        "V3_1h_then_15m_fallback": {
+          "train_n": 25,
+          "train_exp": 0.165535,
+          "val_n": 18,
+          "val_exp": 1.154695
+        },
+        "V4_lookback_80_plus_fallback": {
+          "train_n": 27,
+          "train_exp": 0.074652,
+          "val_n": 18,
+          "val_exp": 1.154695
+        }
+      },
+      "vol_atr_pct_p50": 0.1556,
+      "vol_adx_p50": 22.7394
+    }
+  },
+  "base_rate_method": "chronological_smc_sample"
+}
