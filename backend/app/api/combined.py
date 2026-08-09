@@ -25,7 +25,7 @@ from app.combined.history import get_combined_store, reset_combined_store
 from app.combined.schemas import CombinedSignalResult
 from app.combined.threshold import DEFAULT_THRESHOLDS, select_threshold_on_validation
 from app.core.config import Settings, get_settings
-from app.core.errors import ValidationAppError
+from app.core.errors import AppError, ValidationAppError
 from app.market.deps import get_market_service
 from app.market.schemas import ANALYSIS_TIMEFRAMES, OHLCVQuery, ensure_utc, parse_timeframe
 from app.market.service import MarketDataService
@@ -38,7 +38,8 @@ class CompareRequest(BaseModel):
     symbol: str = "XAUUSD"
     timeframe: str = "15m"
     model_id: Optional[str] = None
-    limit: int = Field(default=280, ge=120, le=5000)
+    # Keep enough history so TEST (~15%) still clears validation min_bars.
+    limit: int = Field(default=400, ge=120, le=5000)
     warmup_bars: int = 80
     # If set, freeze this threshold (must come from validation research)
     min_ml_confidence: Optional[float] = None
@@ -128,6 +129,25 @@ async def compare_rule_vs_ml(
     except ValueError as exc:
         raise ValidationAppError(str(exc)) from exc
 
+    try:
+        return await _run_rule_vs_ml_compare(body, service, settings)
+    except AppError:
+        raise
+    except ValueError as exc:
+        raise ValidationAppError(str(exc)) from exc
+    except Exception as exc:
+        raise AppError(
+            f"Compare failed: {type(exc).__name__}: {exc}",
+            code="compare_failed",
+            status_code=500,
+        ) from exc
+
+
+async def _run_rule_vs_ml_compare(
+    body: CompareRequest,
+    service: MarketDataService,
+    settings: Settings,
+) -> dict:
     adapter = ProviderHistoricalAdapter(service)
     bars_by_tf: Dict[str, List] = {}
     for tf in ANALYSIS_TIMEFRAMES:

@@ -53,7 +53,8 @@ export function CombinedSignalPanel({
         min_ml_confidence: 0.6,
         run_threshold_scan: false,
         evaluate_test: true,
-        limit: 260,
+        // TEST is ~15% of the window; need enough bars to clear validation mins.
+        limit: 400,
       });
       setCompare(res);
     } catch (e: unknown) {
