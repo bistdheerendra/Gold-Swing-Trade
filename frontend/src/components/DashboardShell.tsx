@@ -378,8 +378,8 @@ export function DashboardShell({
             )}
           </div>
           <p className="mt-2 text-[11px] text-gold-muted">
-            Scroll to zoom · drag to pan · crosshair shows OHLC. SMC overlays use
-            confirmed events only (no look-ahead).
+            Scroll to zoom · drag to pan · crosshair shows OHLC (IST). SMC overlays
+            use confirmed events only (no look-ahead).
           </p>
         </Panel>
 

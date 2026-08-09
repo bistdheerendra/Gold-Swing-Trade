@@ -14,7 +14,9 @@ import {
   EMA_COLORS,
   barsToCandles,
   barsToEmaSeries,
+  formatIstDateTime,
   formatPrice,
+  fromChartTime,
 } from "../../lib/chartData";
 import { DEFAULT_EMA_PERIODS, type EmaPeriod } from "../../lib/ema";
 import { buildSmcMarkers, buildSmcPriceLevels } from "../../lib/smcOverlays";
@@ -210,7 +212,7 @@ export function CandlestickChartView({
       }
       const time =
         typeof param.time === "number"
-          ? new Date((param.time as UTCTimestamp) * 1000).toISOString()
+          ? new Date(fromChartTime(param.time as UTCTimestamp) * 1000).toISOString()
           : null;
       callback({
         time,
@@ -359,7 +361,7 @@ export function OhlcBanner({
       </span>
       {readout.time ? (
         <span className="w-full truncate text-gold-muted sm:w-auto">
-          {new Date(readout.time).toUTCString()}
+          {formatIstDateTime(readout.time)}
         </span>
       ) : null}
     </div>

@@ -1,12 +1,12 @@
 import type { SeriesMarker, UTCTimestamp } from "lightweight-charts";
 import type { OHLCVBar, SmcAnalyzeResponse, SmcEventDto } from "./api";
-import { toUnixSeconds } from "./chartData";
+import { toChartTime } from "./chartData";
 import { SMC_COLORS, type SmcOverlayVisibility } from "./smcTheme";
 
 function timeAt(bars: readonly OHLCVBar[], index: number): UTCTimestamp | null {
   const bar = bars[index];
   if (!bar) return null;
-  return toUnixSeconds(bar.timestamp);
+  return toChartTime(bar.timestamp);
 }
 
 function marker(

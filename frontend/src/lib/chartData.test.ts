@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { barsToCandles, barsToEmaSeries } from "./chartData";
+import {
+  barsToCandles,
+  barsToEmaSeries,
+  formatIstDateTime,
+  fromChartTime,
+  IST_OFFSET_SECONDS,
+  toChartTime,
+  toUnixSeconds,
+} from "./chartData";
 import type { OHLCVBar } from "./api";
 
 function bar(i: number, close: number): OHLCVBar {
@@ -23,6 +31,20 @@ describe("chartData adapters", () => {
     expect(candles).toHaveLength(2);
     expect(candles[0]!.time).toBeLessThan(candles[1]!.time);
     expect(candles[0]!.close).toBe(2300);
+  });
+
+  it("shifts candle times by IST offset for chart axis display", () => {
+    const bars = [bar(0, 2300)];
+    const utc = toUnixSeconds(bars[0]!.timestamp);
+    expect(toChartTime(bars[0]!.timestamp)).toBe(utc + IST_OFFSET_SECONDS);
+    expect(barsToCandles(bars)[0]!.time).toBe(utc + IST_OFFSET_SECONDS);
+    expect(fromChartTime(utc + IST_OFFSET_SECONDS)).toBe(utc);
+  });
+
+  it("formats times in IST", () => {
+    // 2024-01-01 00:00 UTC → 05:30 IST
+    expect(formatIstDateTime("2024-01-01T00:00:00.000Z")).toMatch(/05:30/);
+    expect(formatIstDateTime("2024-01-01T00:00:00.000Z")).toContain("IST");
   });
 
   it("EMA series omit warm-up points and stay aligned to bar times", () => {
