@@ -1,0 +1,246 @@
+{
+  "generated_at": "2026-08-09T11:28:16.219828+00:00",
+  "constants": {
+    "N": 8,
+    "k": 1.0,
+    "atr_period": 14,
+    "note": "Fixed a priori \u2014 not retuned on TEST"
+  },
+  "dataset_id": "21f43639-8866-4dbe-a7e8-301f2c9bc809",
+  "output_dir": "C:\\Users\\admin\\Desktop\\Gold Trader\\data\\ml_datasets_candle\\21f43639-8866-4dbe-a7e8-301f2c9bc809",
+  "row_count": 16294,
+  "source_bars_15m": 16382,
+  "split_dates": {
+    "train": {
+      "start": "2026-02-20T09:45:00+00:00",
+      "end": "2026-06-19T04:45:00+00:00",
+      "n": 11405
+    },
+    "validation": {
+      "start": "2026-06-19T05:00:00+00:00",
+      "end": "2026-07-14T15:45:00+00:00",
+      "n": 2444
+    },
+    "test": {
+      "start": "2026-07-14T16:00:00+00:00",
+      "end": "2026-08-09T03:00:00+00:00",
+      "n": 2445
+    }
+  },
+  "class_distribution": {
+    "all": {
+      "counts": {
+        "UP": 6903,
+        "DOWN": 7420,
+        "FLAT": 1971
+      },
+      "pct": {
+        "DOWN": 0.4554,
+        "FLAT": 0.121,
+        "UP": 0.4237
+      },
+      "n": 16294
+    },
+    "train": {
+      "counts": {
+        "UP": 4845,
+        "DOWN": 5230,
+        "FLAT": 1330
+      },
+      "pct": {
+        "DOWN": 0.4586,
+        "FLAT": 0.1166,
+        "UP": 0.4248
+      },
+      "n": 11405
+    },
+    "validation": {
+      "counts": {
+        "UP": 979,
+        "DOWN": 1186,
+        "FLAT": 279
+      },
+      "pct": {
+        "DOWN": 0.4853,
+        "FLAT": 0.1142,
+        "UP": 0.4006
+      },
+      "n": 2444
+    },
+    "test": {
+      "counts": {
+        "FLAT": 362,
+        "DOWN": 1004,
+        "UP": 1079
+      },
+      "pct": {
+        "DOWN": 0.4106,
+        "FLAT": 0.1481,
+        "UP": 0.4413
+      },
+      "n": 2445
+    }
+  },
+  "selected_model_type": "gradient_boosting",
+  "validation_metrics": {
+    "accuracy": 0.46072,
+    "balanced_accuracy": 0.356784,
+    "precision_macro": 0.403249,
+    "recall_macro": 0.356784,
+    "f1_macro": 0.353482,
+    "confusion_matrix": {
+      "DOWN": {
+        "DOWN": 692,
+        "FLAT": 26,
+        "UP": 468
+      },
+      "FLAT": {
+        "DOWN": 153,
+        "FLAT": 17,
+        "UP": 109
+      },
+      "UP": {
+        "DOWN": 547,
+        "FLAT": 15,
+        "UP": 417
+      }
+    },
+    "support": {
+      "UP": 979,
+      "DOWN": 1186,
+      "FLAT": 279
+    },
+    "n": 2444
+  },
+  "test_metrics": {
+    "accuracy": 0.438037,
+    "balanced_accuracy": 0.364023,
+    "precision_macro": 0.451286,
+    "recall_macro": 0.364023,
+    "f1_macro": 0.35649,
+    "confusion_matrix": {
+      "DOWN": {
+        "DOWN": 615,
+        "FLAT": 14,
+        "UP": 375
+      },
+      "FLAT": {
+        "DOWN": 178,
+        "FLAT": 31,
+        "UP": 153
+      },
+      "UP": {
+        "DOWN": 634,
+        "FLAT": 20,
+        "UP": 425
+      }
+    },
+    "support": {
+      "FLAT": 362,
+      "DOWN": 1004,
+      "UP": 1079
+    },
+    "n": 2445
+  },
+  "majority_baseline_test": {
+    "accuracy": 0.410634,
+    "balanced_accuracy": 0.333333,
+    "precision_macro": 0.136878,
+    "recall_macro": 0.333333,
+    "f1_macro": 0.194066,
+    "confusion_matrix": {
+      "DOWN": {
+        "DOWN": 1004,
+        "FLAT": 0,
+        "UP": 0
+      },
+      "FLAT": {
+        "DOWN": 362,
+        "FLAT": 0,
+        "UP": 0
+      },
+      "UP": {
+        "DOWN": 1079,
+        "FLAT": 0,
+        "UP": 0
+      }
+    },
+    "support": {
+      "FLAT": 362,
+      "DOWN": 1004,
+      "UP": 1079
+    },
+    "n": 2445
+  },
+  "skill_vs_majority_acc": 0.02740300000000001,
+  "train_summary": {
+    "model_id": "direction_gradient_boosting_ab3ab96e",
+    "overfitting": "POSSIBLE_OVERFIT",
+    "baselines": {
+      "majority_validation": {
+        "accuracy": 0.48527,
+        "balanced_accuracy": 0.333333,
+        "precision_macro": 0.161757,
+        "recall_macro": 0.333333,
+        "f1_macro": 0.217815,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 1186,
+            "FLAT": 0,
+            "UP": 0
+          },
+          "FLAT": {
+            "DOWN": 279,
+            "FLAT": 0,
+            "UP": 0
+          },
+          "UP": {
+            "DOWN": 979,
+            "FLAT": 0,
+            "UP": 0
+          }
+        },
+        "support": {
+          "UP": 979,
+          "DOWN": 1186,
+          "FLAT": 279
+        },
+        "n": 2444
+      },
+      "random_validation": {
+        "accuracy": 0.337971,
+        "balanced_accuracy": 0.335682,
+        "precision_macro": 0.337124,
+        "recall_macro": 0.335682,
+        "f1_macro": 0.313411,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 392,
+            "FLAT": 400,
+            "UP": 394
+          },
+          "FLAT": {
+            "DOWN": 99,
+            "FLAT": 91,
+            "UP": 89
+          },
+          "UP": {
+            "DOWN": 320,
+            "FLAT": 316,
+            "UP": 343
+          }
+        },
+        "support": {
+          "UP": 979,
+          "DOWN": 1186,
+          "FLAT": 279
+        },
+        "n": 2444
+      }
+    }
+  },
+  "verdict": "WEAK_OR_POSITIVE_SIGNAL",
+  "verdict_text": "Model beats majority baseline by \u0394acc=0.0274 (test_acc=0.438037, majority_acc=0.410634). Still research-only until a separate wiring decision; Phase 12 remains NO-GO until strategy expectancy gates are also cleared.",
+  "phase_6_10_untouched": true,
+  "calibration_note": "See model artifact test metrics / calibration buckets when available. Majority FLAT baseline can inflate accuracy \u2014 prefer balanced_accuracy + per-class recall."
+}

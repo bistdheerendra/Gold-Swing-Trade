@@ -1,0 +1,543 @@
+{
+  "model_id": "direction_gradient_boosting_bfcb716a",
+  "model_type": "gradient_boosting",
+  "model_version": "1.0.0",
+  "dataset_id": "d3d41af5-0a5f-4186-b140-4b8839e3c346",
+  "dataset_version": "1.0.0",
+  "feature_version": "1.0.0",
+  "label_version": "1.0.0",
+  "feature_count": 76,
+  "target": "direction",
+  "task": "classification",
+  "status": "RESEARCH",
+  "random_seed": 42,
+  "feature_names": [
+    "body_size_pct",
+    "upper_wick_pct",
+    "lower_wick_pct",
+    "range_pct",
+    "close_position_in_range",
+    "bullish_candle",
+    "bearish_candle",
+    "ema20_distance_pct",
+    "ema20_slope",
+    "ema50_distance_pct",
+    "ema50_slope",
+    "ema100_distance_pct",
+    "ema100_slope",
+    "ema200_distance_pct",
+    "ema200_slope",
+    "ema20_vs_50",
+    "ema50_vs_100",
+    "ema100_vs_200",
+    "ema_alignment",
+    "rsi",
+    "rsi_distance_from_50",
+    "macd",
+    "macd_signal",
+    "macd_histogram",
+    "macd_histogram_slope",
+    "adx",
+    "atr",
+    "atr_pct",
+    "bb_position",
+    "bb_width",
+    "atr_percentile",
+    "structure_bias",
+    "last_bos_direction",
+    "last_bos_age",
+    "last_choch_direction",
+    "last_choch_age",
+    "bullish_fvg_present",
+    "bearish_fvg_present",
+    "nearest_bullish_fvg_distance_pct",
+    "nearest_bearish_fvg_distance_pct",
+    "bullish_ob_present",
+    "bearish_ob_present",
+    "nearest_bullish_ob_distance_pct",
+    "nearest_bearish_ob_distance_pct",
+    "demand_present",
+    "supply_present",
+    "buy_side_liquidity_distance_pct",
+    "sell_side_liquidity_distance_pct",
+    "liquidity_sweep_direction",
+    "liquidity_sweep_age",
+    "premium_discount_state",
+    "distance_from_equilibrium_pct",
+    "htf_1d_bias",
+    "htf_4h_bias",
+    "htf_1h_bias",
+    "entry_15m_bias",
+    "mtf_alignment_score",
+    "higher_timeframe_bias",
+    "setup_bias",
+    "entry_bias",
+    "market_state_code",
+    "strategy_score",
+    "strategy_direction",
+    "strategy_state_code",
+    "cond_htf_alignment",
+    "cond_structure_confirmation",
+    "cond_liquidity_confirmation",
+    "cond_ob_confirmation",
+    "cond_fvg_confirmation",
+    "cond_entry_confirmation",
+    "rr_candidate",
+    "volatility_filter_state",
+    "hour_utc",
+    "day_of_week",
+    "day_of_month",
+    "month"
+  ],
+  "preprocessing_version": "1.0.0",
+  "hyperparameters": {
+    "random_seed": 42,
+    "class_weight": "balanced",
+    "max_iter": 100
+  },
+  "class_counts_train": {
+    "counts": {
+      "UP": 99,
+      "DOWN": 83,
+      "NEUTRAL": 196
+    },
+    "percentages": {
+      "UP": 0.261905,
+      "DOWN": 0.219577,
+      "NEUTRAL": 0.518519
+    }
+  },
+  "candidates": [
+    {
+      "model_type": "gradient_boosting",
+      "selection_score": 0.27712,
+      "train_metrics": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "precision_macro": 1.0,
+        "recall_macro": 1.0,
+        "f1_macro": 1.0,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 83,
+            "NEUTRAL": 0,
+            "UP": 0
+          },
+          "NEUTRAL": {
+            "DOWN": 0,
+            "NEUTRAL": 196,
+            "UP": 0
+          },
+          "UP": {
+            "DOWN": 0,
+            "NEUTRAL": 0,
+            "UP": 99
+          }
+        },
+        "support": {
+          "UP": 99,
+          "DOWN": 83,
+          "NEUTRAL": 196
+        },
+        "n": 378
+      },
+      "validation_metrics": {
+        "accuracy": 0.271605,
+        "balanced_accuracy": 0.304356,
+        "precision_macro": 0.274643,
+        "recall_macro": 0.304356,
+        "f1_macro": 0.27712,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 10,
+            "NEUTRAL": 5,
+            "UP": 4
+          },
+          "NEUTRAL": {
+            "DOWN": 10,
+            "NEUTRAL": 5,
+            "UP": 11
+          },
+          "UP": {
+            "DOWN": 10,
+            "NEUTRAL": 19,
+            "UP": 7
+          }
+        },
+        "support": {
+          "UP": 36,
+          "NEUTRAL": 26,
+          "DOWN": 19
+        },
+        "n": 81
+      }
+    },
+    {
+      "model_type": "logistic",
+      "selection_score": 0.239836,
+      "train_metrics": {
+        "accuracy": 0.772487,
+        "balanced_accuracy": 0.803277,
+        "precision_macro": 0.757816,
+        "recall_macro": 0.803277,
+        "f1_macro": 0.769175,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 72,
+            "NEUTRAL": 6,
+            "UP": 5
+          },
+          "NEUTRAL": {
+            "DOWN": 33,
+            "NEUTRAL": 136,
+            "UP": 27
+          },
+          "UP": {
+            "DOWN": 6,
+            "NEUTRAL": 9,
+            "UP": 84
+          }
+        },
+        "support": {
+          "UP": 99,
+          "DOWN": 83,
+          "NEUTRAL": 196
+        },
+        "n": 378
+      },
+      "validation_metrics": {
+        "accuracy": 0.407407,
+        "balanced_accuracy": 0.322125,
+        "precision_macro": 0.205314,
+        "recall_macro": 0.322125,
+        "f1_macro": 0.239836,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 2,
+            "NEUTRAL": 0,
+            "UP": 17
+          },
+          "NEUTRAL": {
+            "DOWN": 5,
+            "NEUTRAL": 0,
+            "UP": 21
+          },
+          "UP": {
+            "DOWN": 5,
+            "NEUTRAL": 0,
+            "UP": 31
+          }
+        },
+        "support": {
+          "UP": 36,
+          "NEUTRAL": 26,
+          "DOWN": 19
+        },
+        "n": 81
+      }
+    },
+    {
+      "model_type": "random_forest",
+      "selection_score": 0.237255,
+      "train_metrics": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "precision_macro": 1.0,
+        "recall_macro": 1.0,
+        "f1_macro": 1.0,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 83,
+            "NEUTRAL": 0,
+            "UP": 0
+          },
+          "NEUTRAL": {
+            "DOWN": 0,
+            "NEUTRAL": 196,
+            "UP": 0
+          },
+          "UP": {
+            "DOWN": 0,
+            "NEUTRAL": 0,
+            "UP": 99
+          }
+        },
+        "support": {
+          "UP": 99,
+          "DOWN": 83,
+          "NEUTRAL": 196
+        },
+        "n": 378
+      },
+      "validation_metrics": {
+        "accuracy": 0.259259,
+        "balanced_accuracy": 0.284413,
+        "precision_macro": 0.276361,
+        "recall_macro": 0.284413,
+        "f1_macro": 0.237255,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 10,
+            "NEUTRAL": 1,
+            "UP": 8
+          },
+          "NEUTRAL": {
+            "DOWN": 17,
+            "NEUTRAL": 2,
+            "UP": 7
+          },
+          "UP": {
+            "DOWN": 22,
+            "NEUTRAL": 5,
+            "UP": 9
+          }
+        },
+        "support": {
+          "UP": 36,
+          "NEUTRAL": 26,
+          "DOWN": 19
+        },
+        "n": 81
+      }
+    }
+  ],
+  "selected_model_type": "gradient_boosting",
+  "train_metrics": {
+    "accuracy": 1.0,
+    "balanced_accuracy": 1.0,
+    "precision_macro": 1.0,
+    "recall_macro": 1.0,
+    "f1_macro": 1.0,
+    "confusion_matrix": {
+      "DOWN": {
+        "DOWN": 83,
+        "NEUTRAL": 0,
+        "UP": 0
+      },
+      "NEUTRAL": {
+        "DOWN": 0,
+        "NEUTRAL": 196,
+        "UP": 0
+      },
+      "UP": {
+        "DOWN": 0,
+        "NEUTRAL": 0,
+        "UP": 99
+      }
+    },
+    "support": {
+      "UP": 99,
+      "DOWN": 83,
+      "NEUTRAL": 196
+    },
+    "n": 378
+  },
+  "validation_metrics": {
+    "accuracy": 0.271605,
+    "balanced_accuracy": 0.304356,
+    "precision_macro": 0.274643,
+    "recall_macro": 0.304356,
+    "f1_macro": 0.27712,
+    "confusion_matrix": {
+      "DOWN": {
+        "DOWN": 10,
+        "NEUTRAL": 5,
+        "UP": 4
+      },
+      "NEUTRAL": {
+        "DOWN": 10,
+        "NEUTRAL": 5,
+        "UP": 11
+      },
+      "UP": {
+        "DOWN": 10,
+        "NEUTRAL": 19,
+        "UP": 7
+      }
+    },
+    "support": {
+      "UP": 36,
+      "NEUTRAL": 26,
+      "DOWN": 19
+    },
+    "n": 81
+  },
+  "test_metrics": {
+    "accuracy": 0.567901,
+    "balanced_accuracy": 0.454203,
+    "precision_macro": 0.477017,
+    "recall_macro": 0.454203,
+    "f1_macro": 0.444404,
+    "confusion_matrix": {
+      "DOWN": {
+        "DOWN": 3,
+        "NEUTRAL": 3,
+        "UP": 4
+      },
+      "NEUTRAL": {
+        "DOWN": 8,
+        "NEUTRAL": 36,
+        "UP": 2
+      },
+      "UP": {
+        "DOWN": 8,
+        "NEUTRAL": 10,
+        "UP": 7
+      }
+    },
+    "support": {
+      "NEUTRAL": 46,
+      "UP": 25,
+      "DOWN": 10
+    },
+    "n": 81
+  },
+  "trade_only_win_loss": {},
+  "baselines": {
+    "majority_validation": {
+      "accuracy": 0.320988,
+      "balanced_accuracy": 0.333333,
+      "precision_macro": 0.106996,
+      "recall_macro": 0.333333,
+      "f1_macro": 0.161994,
+      "confusion_matrix": {
+        "DOWN": {
+          "DOWN": 0,
+          "NEUTRAL": 19,
+          "UP": 0
+        },
+        "NEUTRAL": {
+          "DOWN": 0,
+          "NEUTRAL": 26,
+          "UP": 0
+        },
+        "UP": {
+          "DOWN": 0,
+          "NEUTRAL": 36,
+          "UP": 0
+        }
+      },
+      "support": {
+        "UP": 36,
+        "NEUTRAL": 26,
+        "DOWN": 19
+      },
+      "n": 81
+    },
+    "random_validation": {
+      "accuracy": 0.37037,
+      "balanced_accuracy": 0.390351,
+      "precision_macro": 0.380952,
+      "recall_macro": 0.390351,
+      "f1_macro": 0.370332,
+      "confusion_matrix": {
+        "DOWN": {
+          "DOWN": 8,
+          "NEUTRAL": 4,
+          "UP": 7
+        },
+        "NEUTRAL": {
+          "DOWN": 8,
+          "NEUTRAL": 13,
+          "UP": 5
+        },
+        "UP": {
+          "DOWN": 16,
+          "NEUTRAL": 11,
+          "UP": 9
+        }
+      },
+      "support": {
+        "UP": 36,
+        "NEUTRAL": 26,
+        "DOWN": 19
+      },
+      "n": 81
+    }
+  },
+  "calibration_validation": {
+    "buckets": [
+      {
+        "range": "0.50-0.60",
+        "count": 6,
+        "avg_pred": 0.5386,
+        "avg_true": 0.1667
+      },
+      {
+        "range": "0.60-0.70",
+        "count": 5,
+        "avg_pred": 0.6576,
+        "avg_true": 0.6
+      },
+      {
+        "range": "0.70-0.80",
+        "count": 3,
+        "avg_pred": 0.7587,
+        "avg_true": 0.3333
+      },
+      {
+        "range": "0.80-0.90",
+        "count": 4,
+        "avg_pred": 0.8393,
+        "avg_true": 0.0
+      },
+      {
+        "range": "0.90-1.00",
+        "count": 3,
+        "avg_pred": 0.97,
+        "avg_true": 0.6667
+      }
+    ],
+    "brier": 0.403062,
+    "log_loss": 1.771553,
+    "positive_class": "UP"
+  },
+  "feature_importance": [],
+  "explainability": {
+    "top_features": []
+  },
+  "filter_research": {},
+  "test_filter": {},
+  "selected_threshold_from_validation": 0.6,
+  "walk_forward_architecture": [
+    {
+      "fold_id": 1,
+      "train_start": 0,
+      "train_end": 393,
+      "validation_start": 393,
+      "validation_end": 415,
+      "description": "Fold 1: Train[0:393) \u2192 Validation[393:415)"
+    },
+    {
+      "fold_id": 2,
+      "train_start": 0,
+      "train_end": 415,
+      "validation_start": 415,
+      "validation_end": 437,
+      "description": "Fold 2: Train[0:415) \u2192 Validation[415:437)"
+    },
+    {
+      "fold_id": 3,
+      "train_start": 0,
+      "train_end": 437,
+      "validation_start": 437,
+      "validation_end": 459,
+      "description": "Fold 3: Train[0:437) \u2192 Validation[437:459)"
+    }
+  ],
+  "overfitting": "POSSIBLE_OVERFIT",
+  "scores": {
+    "train": 1.0,
+    "validation": 0.27712,
+    "test": 0.444404
+  },
+  "trained_at": "2026-08-09T04:58:08.414093+00:00",
+  "artifact_dir": "C:\\Users\\admin\\Desktop\\Gold Trader\\backend\\artifacts\\ml\\direction\\direction_gradient_boosting_bfcb716a",
+  "notes": [
+    "RESEARCH ONLY \u2014 not production",
+    "Model selection used VALIDATION only",
+    "TEST evaluated once after selection",
+    "Thresholds scanned on VALIDATION only",
+    "No GridSearch / Optuna / deep learning"
+  ]
+}
