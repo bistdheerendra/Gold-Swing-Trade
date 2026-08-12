@@ -228,6 +228,7 @@ class StrategyEngine:
             stop_loss=buy_levels.stop_loss,
             targets=buy_levels.targets,
             config=self.config,
+            spot=float(win_15m[-1].close),
         )
         sell_val_errs = validate_trade_levels(
             bullish=False,
@@ -235,6 +236,7 @@ class StrategyEngine:
             stop_loss=sell_levels.stop_loss,
             targets=sell_levels.targets,
             config=self.config,
+            spot=float(win_15m[-1].close),
         )
 
         # Only hard-block BUY/SELL validation when score would otherwise qualify
@@ -303,6 +305,7 @@ class StrategyEngine:
                 stop_loss=levels.stop_loss,
                 targets=levels.targets,
                 config=self.config,
+                spot=float(win_15m[-1].close),
             )
             if val or levels.errors:
                 notes.extend(val or levels.errors)

@@ -9,8 +9,8 @@ import {
 import {
   Activity,
   AlertTriangle,
-  CircleDot,
   Menu,
+  RefreshCw,
   Shield,
   Sparkles,
   Waves,
@@ -21,7 +21,7 @@ import {
   OhlcBanner,
   type OhlcReadout,
 } from "./charts/CandlestickChart";
-import { EmaToggleBar } from "./charts/EmaToggleBar";
+import { ChartOverlayMenus } from "./charts/ChartOverlayMenus";
 import { TimeframeSelector } from "./TimeframeSelector";
 import { SymbolSelector } from "./SymbolSelector";
 import {
@@ -51,6 +51,7 @@ import { MultiTimeframePanel } from "./MultiTimeframePanel";
 import { SessionReferencePanel } from "./SessionReferencePanel";
 import { SignalCard, SignalHistoryTable } from "./SignalCard";
 import { CombinedSignalPanel } from "./CombinedSignalPanel";
+import { BinanceSuggestionPanel } from "./BinanceSuggestionPanel";
 import { RiskPanel } from "./RiskPanel";
 import { formatPrice } from "../lib/chartData";
 import { type EmaPeriod } from "../lib/ema";
@@ -61,17 +62,6 @@ import {
   type SmcOverlayKey,
   type SmcOverlayVisibility,
 } from "../lib/smcTheme";
-
-const smcToggleDefs: { id: SmcOverlayKey; label: string }[] = [
-  { id: "swing", label: "Swing High/Low" },
-  { id: "bos", label: "BOS" },
-  { id: "choch", label: "CHoCH" },
-  { id: "fvg", label: "FVG" },
-  { id: "ob", label: "Order Block" },
-  { id: "zones", label: "Demand/Supply" },
-  { id: "liq", label: "Liquidity" },
-  { id: "sweep", label: "Liquidity Sweep" },
-];
 
 const initialEmaVisibility: Record<EmaPeriod, boolean> = {
   20: true,
@@ -112,6 +102,10 @@ export function DashboardShell({
   const [smc, setSmc] = useState<SmcAnalyzeResponse | null>(null);
   const [mtf, setMtf] = useState<MtfAnalyzeResponse | null>(null);
   const [strategy, setStrategy] = useState<StrategyAnalyzeResponse | null>(null);
+  const [strategyFetchedAt, setStrategyFetchedAt] = useState<string | null>(null);
+  const [strategyRefreshing, setStrategyRefreshing] = useState(false);
+  const [binanceRefreshNonce, setBinanceRefreshNonce] = useState(0);
+  const [binanceRefreshing, setBinanceRefreshing] = useState(false);
   const [signalHistory, setSignalHistory] = useState<StrategySignalDto[]>([]);
   const [combined, setCombined] = useState<CombinedSignalResponse | null>(null);
   const [mlModelId, setMlModelId] = useState<string | undefined>(undefined);
@@ -238,7 +232,13 @@ export function DashboardShell({
         setTa(taRes.status === "fulfilled" ? taRes.value : null);
         setSmc(smcRes.status === "fulfilled" ? smcRes.value : null);
         setMtf(mtfRes.status === "fulfilled" ? mtfRes.value : null);
-        setStrategy(strategyRes.status === "fulfilled" ? strategyRes.value : null);
+        if (strategyRes.status === "fulfilled") {
+          setStrategy(strategyRes.value);
+          setStrategyFetchedAt(new Date().toISOString());
+        } else {
+          setStrategy(null);
+          setStrategyFetchedAt(null);
+        }
         setSignalHistory(
           histRes.status === "fulfilled" ? histRes.value.signals : [],
         );
@@ -263,6 +263,7 @@ export function DashboardShell({
           setSmc(null);
           setMtf(null);
           setStrategy(null);
+          setStrategyFetchedAt(null);
           setSignalHistory([]);
           setCombined(null);
           setChartError(
@@ -296,6 +297,32 @@ export function DashboardShell({
   const onEmaToggle = useCallback((period: EmaPeriod, visible: boolean) => {
     setEmaVisibility((prev) => ({ ...prev, [period]: visible }));
   }, []);
+
+  const onSmcToggle = useCallback((id: SmcOverlayKey) => {
+    startTransition(() => {
+      setToggles((prev) => ({
+        ...prev,
+        [id]: !prev[id],
+      }));
+    });
+  }, []);
+
+  const refreshCurrentSignal = useCallback(async () => {
+    setStrategyRefreshing(true);
+    try {
+      const [strategyRes, histRes] = await Promise.all([
+        fetchStrategyAnalyze({ limit: 400, symbol }),
+        fetchStrategyHistory({ limit: 25, symbol }),
+      ]);
+      setStrategy(strategyRes);
+      setStrategyFetchedAt(new Date().toISOString());
+      setSignalHistory(histRes.signals ?? []);
+    } catch {
+      /* keep last good signal; card still shows prior suggestion time */
+    } finally {
+      setStrategyRefreshing(false);
+    }
+  }, [symbol]);
 
   const openPage = (fn?: () => void) => {
     setNavOpen(false);
@@ -463,6 +490,12 @@ export function DashboardShell({
               >
                 Sessions
               </button>
+              <ChartOverlayMenus
+                emaVisibility={emaVisibility}
+                onEmaChange={onEmaToggle}
+                smcVisibility={toggles}
+                onSmcToggle={onSmcToggle}
+              />
               <TimeframeSelector
                 value={timeframe}
                 onChange={setTimeframe}
@@ -524,6 +557,18 @@ export function DashboardShell({
                 ? "NO TRADE"
                 : (strategy?.signal ?? "—")
             }
+            hint={
+              mtf?.higher_timeframe_bias
+                ? `Bias · ${mtf.higher_timeframe_bias}`
+                : "Bias · —"
+            }
+            hintTone={
+              mtf?.higher_timeframe_bias === "BULLISH"
+                ? "bull"
+                : mtf?.higher_timeframe_bias === "BEARISH"
+                  ? "bear"
+                  : "wait"
+            }
           />
           <MiniStat
             icon={<Shield className="h-4 w-4" />}
@@ -544,39 +589,13 @@ export function DashboardShell({
           />
         </div>
 
-        {/* Equal columns — indicators + decisions sit centered, no empty mid gap */}
-        <div className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <aside className="min-w-0 space-y-4">
-            <Panel title="Market Overview">
-              <MetricRow label="Instrument" value={symbolLabel(symbol)} />
-              <MetricRow
-                label="Price"
-                value={formatPrice(ohlc.close ?? lastClose)}
-                hint={`${bars.length} bars · ${timeframe}`}
-              />
-              <MetricRow
-                label="Bias"
-                value={mtf?.higher_timeframe_bias ?? "—"}
-                accent={mtf ? "wait" : undefined}
-              />
-              <MetricRow label="Timeframe" value={timeframe.toUpperCase()} />
-            </Panel>
-
-            <Panel title="Trading Sessions (IST)">
-              <SessionReferencePanel
-                sessions={sessionDefs}
-                active={sessionActive}
-                asOf={sessionAsOf}
-                loading={sessionLoading}
-                error={sessionError}
-              />
-            </Panel>
-
-            <Panel title="Multi-Timeframe Analysis">
+        <Panel title="Market Analysis">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4">
+            <AnalysisCard title="Multi-Timeframe Analysis">
               <MultiTimeframePanel data={mtf} />
-            </Panel>
+            </AnalysisCard>
 
-            <Panel title="SMC Analysis">
+            <AnalysisCard title="SMC Analysis">
               {smc ? (
                 <div className="space-y-2">
                   <MetricRow label="Structure" value={smc.summary.structure} />
@@ -596,44 +615,9 @@ export function DashboardShell({
                   <AiLoader label="Loading SMC" size="sm" />
                 </div>
               )}
-            </Panel>
-          </aside>
+            </AnalysisCard>
 
-          <aside className="min-w-0 space-y-4">
-            <Panel title="SMC Overlays">
-              <p className="mb-2 text-[11px] text-gold-muted">
-                Detection is causal — confirmed events only. No trade signal yet.
-              </p>
-              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                {smcToggleDefs.map((item) => (
-                  <label
-                    key={item.id}
-                    className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm text-cream/90 hover:bg-panel-elevated"
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <CircleDot className="h-3.5 w-3.5 shrink-0 text-gold-muted" />
-                      <span className="truncate">{item.label}</span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      className="accent-gold"
-                      checked={Boolean(toggles[item.id])}
-                      onChange={() => {
-                        const id = item.id;
-                        startTransition(() => {
-                          setToggles((prev) => ({
-                            ...prev,
-                            [id]: !prev[id],
-                          }));
-                        });
-                      }}
-                    />
-                  </label>
-                ))}
-              </div>
-            </Panel>
-
-            <Panel title="TA Snapshot">
+            <AnalysisCard title="TA Snapshot">
               {ta ? (
                 <div className="space-y-2">
                   <MetricRow label="RSI" value={formatPrice(ta.latest.rsi)} />
@@ -678,57 +662,106 @@ export function DashboardShell({
                   <AiLoader label="Loading indicators" size="sm" />
                 </div>
               )}
-            </Panel>
+            </AnalysisCard>
+          </div>
+        </Panel>
 
-            <Panel title="EMA Overlays">
-              <EmaToggleBar visibility={emaVisibility} onChange={onEmaToggle} />
-            </Panel>
-
-            <Panel title="Signal History">
-              <SignalHistoryTable signals={signalHistory} />
-            </Panel>
-          </aside>
-
-          <aside className="min-w-0 space-y-4 md:col-span-2 lg:col-span-1">
-            <Panel title="Current Signal">
-              <SignalCard data={strategy} symbolLabel={symbolLabel(symbol)} />
-            </Panel>
-
-            <Panel title="Combined Signal (Rule + ML)">
-              <CombinedSignalPanel
-                modelId={mlModelId}
-                symbol={symbol}
-                initialData={combined}
-                onDataChange={setCombined}
+        <Panel title="Signals">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
+            <AnalysisCard
+              title="Current Signal"
+              action={
+                <RefreshAction
+                  loading={strategyRefreshing}
+                  onClick={() => void refreshCurrentSignal()}
+                  label="Refresh signal"
+                />
+              }
+            >
+              <SignalCard
+                data={strategy}
+                symbolLabel={symbolLabel(symbol)}
+                lastClose={ohlc.close ?? lastClose}
+                suggestedAt={strategyFetchedAt}
+                refreshing={strategyRefreshing}
               />
-            </Panel>
+            </AnalysisCard>
 
-            <Panel title="Explainability">
-              <div className="space-y-3 text-sm">
-                <div className="flex gap-2 text-muted">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                  <p>
-                    Rule + ML filter is research-only. ML confidence is not a
-                    guaranteed win probability. No broker execution.
-                  </p>
+            <AnalysisCard
+              title="Binance-trained · reference"
+              tone="binance"
+              action={
+                <RefreshAction
+                  loading={binanceRefreshing}
+                  onClick={() => setBinanceRefreshNonce((n) => n + 1)}
+                  label="Refresh Binance"
+                  tone="binance"
+                />
+              }
+            >
+              <BinanceSuggestionPanel
+                refreshNonce={binanceRefreshNonce}
+                onLoadingChange={setBinanceRefreshing}
+              />
+            </AnalysisCard>
+          </div>
+        </Panel>
+
+        <Panel title="Sessions & Context">
+          <div className="grid grid-cols-1 gap-3 lg:gap-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:gap-4">
+              <AnalysisCard title="Trading Sessions (IST)">
+                <SessionReferencePanel
+                  sessions={sessionDefs}
+                  active={sessionActive}
+                  asOf={sessionAsOf}
+                  loading={sessionLoading}
+                  error={sessionError}
+                />
+              </AnalysisCard>
+
+              <AnalysisCard title="Explainability">
+                <div className="space-y-3 text-sm">
+                  <div className="flex gap-2 text-muted">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                    <p>
+                      Rule + ML filter is research-only. ML confidence is not a
+                      guaranteed win probability. No broker execution.
+                    </p>
+                  </div>
+                  {healthError ? (
+                    <p className="rounded-lg border border-bear/30 bg-bear/10 px-3 py-2 text-bear">
+                      Backend: {healthError}. Start API with{" "}
+                      <code className="text-cream">uvicorn</code> to connect.
+                    </p>
+                  ) : health ? (
+                    <p className="rounded-lg border border-bull/30 bg-bull/10 px-3 py-2 text-bull">
+                      Connected · strategy {health.strategy_version} · model{" "}
+                      {health.model_version}
+                    </p>
+                  ) : (
+                    <p className="text-muted">Checking API health…</p>
+                  )}
                 </div>
-                {healthError ? (
-                  <p className="rounded-lg border border-bear/30 bg-bear/10 px-3 py-2 text-bear">
-                    Backend: {healthError}. Start API with{" "}
-                    <code className="text-cream">uvicorn</code> to connect.
-                  </p>
-                ) : health ? (
-                  <p className="rounded-lg border border-bull/30 bg-bull/10 px-3 py-2 text-bull">
-                    Connected · strategy {health.strategy_version} · model{" "}
-                    {health.model_version}
-                  </p>
-                ) : (
-                  <p className="text-muted">Checking API health…</p>
-                )}
-              </div>
-            </Panel>
-          </aside>
-        </div>
+              </AnalysisCard>
+            </div>
+
+            <AnalysisCard title="Signal History">
+              <SignalHistoryTable signals={signalHistory} />
+            </AnalysisCard>
+          </div>
+        </Panel>
+
+        <section className="w-full min-w-0">
+          <Panel title="Combined Signal (Rule + ML)">
+            <CombinedSignalPanel
+              modelId={mlModelId}
+              symbol={symbol}
+              initialData={combined}
+              onDataChange={setCombined}
+            />
+          </Panel>
+        </section>
 
         <section className="w-full min-w-0">
           <Panel title="Risk & Position">
@@ -776,10 +809,89 @@ function Panel({
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-muted">
           {title}
         </h2>
-        {action ? <div className="min-w-0 max-w-full">{action}</div> : null}
+        {action ? <div className="min-w-0 max-w-full shrink-0">{action}</div> : null}
       </div>
       {children}
     </section>
+  );
+}
+
+function AnalysisCard({
+  title,
+  children,
+  action,
+  tone,
+}: {
+  title: string;
+  children: ReactNode;
+  action?: ReactNode;
+  tone?: "binance";
+}) {
+  const isBinance = tone === "binance";
+  return (
+    <div
+      className={
+        isBinance
+          ? "min-w-0 rounded-xl border border-binance/45 bg-binance-ink p-3 shadow-[inset_0_0_0_1px_rgba(254,216,80,0.08)] sm:p-4"
+          : "min-w-0 rounded-xl border border-line/50 bg-ink/30 p-3 sm:p-4"
+      }
+      data-theme={isBinance ? "binance" : undefined}
+    >
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3
+          className={
+            isBinance
+              ? "text-[10px] font-semibold uppercase tracking-[0.16em] text-white"
+              : "text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-muted"
+          }
+        >
+          {isBinance ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="inline-block h-2 w-2 rounded-[2px] bg-binance"
+              />
+              {title}
+            </span>
+          ) : (
+            title
+          )}
+        </h3>
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function RefreshAction({
+  loading,
+  onClick,
+  label,
+  tone,
+}: {
+  loading: boolean;
+  onClick: () => void;
+  label: string;
+  tone?: "binance";
+}) {
+  const binance = tone === "binance";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      aria-label={label}
+      title={label}
+      className={
+        binance
+          ? "inline-flex items-center gap-1.5 rounded-lg border border-binance/60 bg-binance/15 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-binance/25 disabled:opacity-50"
+          : "inline-flex items-center gap-1.5 rounded-lg border border-gold/35 bg-ink/40 px-2.5 py-1 text-[11px] font-medium text-gold-bright hover:bg-gold/10 disabled:opacity-50"
+      }
+    >
+      <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+      {loading ? "Updating…" : "Refresh"}
+    </button>
   );
 }
 
@@ -820,12 +932,22 @@ function MiniStat({
   label,
   value,
   hint,
+  hintTone,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   hint?: string;
+  hintTone?: "bull" | "bear" | "wait";
 }) {
+  const hintClass =
+    hintTone === "bull"
+      ? "text-bull"
+      : hintTone === "bear"
+        ? "text-bear"
+        : hintTone === "wait"
+          ? "text-wait"
+          : "text-gold-muted/80";
   return (
     <div className="rounded-2xl border border-line/70 bg-panel/80 p-3 sm:p-4">
       <div className="mb-2 flex items-center gap-2 text-gold-muted">
@@ -836,7 +958,9 @@ function MiniStat({
         {value}
       </p>
       {hint ? (
-        <p className="mt-1 truncate text-[10px] uppercase tracking-wide text-gold-muted/80">
+        <p
+          className={`mt-1 truncate text-[10px] uppercase tracking-wide ${hintClass}`}
+        >
           {hint}
         </p>
       ) : null}

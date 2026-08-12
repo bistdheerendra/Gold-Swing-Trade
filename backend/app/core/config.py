@@ -79,6 +79,53 @@ class Settings(BaseSettings):
         alias="DELTA_API_BASE_URL",
     )
 
+    # Binance PAXGUSDT research sidecar (NOT default market provider / NOT Phase 12 GO)
+    binance_futures_base_url: str = Field(
+        default="https://fapi.binance.com",
+        alias="BINANCE_FUTURES_BASE_URL",
+    )
+    binance_paxgusdt_symbol: str = Field(
+        default="PAXGUSDT",
+        alias="BINANCE_PAXGUSDT_SYMBOL",
+    )
+    binance_ml_artifacts_root: str = Field(
+        default="artifacts/ml_candle_binance",
+        alias="BINANCE_ML_ARTIFACTS_ROOT",
+    )
+    binance_ml_model_id: str = Field(
+        default="",
+        alias="BINANCE_ML_MODEL_ID",
+    )
+    binance_suggest_enabled: bool = Field(
+        default=True,
+        alias="BINANCE_SUGGEST_ENABLED",
+    )
+    # Weekly Binance research refresh (backfill + retrain) — API process scheduler
+    binance_weekly_update_enabled: bool = Field(
+        default=True,
+        alias="BINANCE_WEEKLY_UPDATE_ENABLED",
+    )
+    binance_weekly_interval_days: int = Field(
+        default=7,
+        alias="BINANCE_WEEKLY_INTERVAL_DAYS",
+    )
+    binance_weekly_check_interval_sec: int = Field(
+        default=3600,
+        alias="BINANCE_WEEKLY_CHECK_INTERVAL_SEC",
+    )
+    binance_weekly_startup_delay_sec: int = Field(
+        default=30,
+        alias="BINANCE_WEEKLY_STARTUP_DELAY_SEC",
+    )
+    binance_weekly_backfill_timeout_sec: int = Field(
+        default=1800,
+        alias="BINANCE_WEEKLY_BACKFILL_TIMEOUT_SEC",
+    )
+    binance_weekly_train_timeout_sec: int = Field(
+        default=3600,
+        alias="BINANCE_WEEKLY_TRAIN_TIMEOUT_SEC",
+    )
+
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

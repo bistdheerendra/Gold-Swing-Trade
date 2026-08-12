@@ -213,7 +213,14 @@ def _map_direction(
 ) -> Tuple[float, str]:
     orig = [str(c) for c in classes]
     pred = str(pred_raw).upper()
-    mapping = {"UP": "BUY", "DOWN": "SELL", "NEUTRAL": "NEUTRAL", "BUY": "BUY", "SELL": "SELL"}
+    mapping = {
+        "UP": "BUY",
+        "DOWN": "SELL",
+        "NEUTRAL": "NEUTRAL",
+        "FLAT": "NEUTRAL",
+        "BUY": "BUY",
+        "SELL": "SELL",
+    }
     mapped = mapping.get(pred, "NEUTRAL")
     conf = 0.5
     if proba is not None and orig:
@@ -242,17 +249,29 @@ def _map_multiclass(
 
 
 def _find_artifact_meta(model_id: str) -> Optional[Dict[str, Any]]:
-    root = Path("artifacts/ml")
-    if not root.exists():
-        return None
-    for path in root.rglob("metrics.json"):
-        try:
-            meta = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+    roots = [
+        Path("artifacts/ml"),
+        Path("artifacts/ml_candle"),
+        Path("artifacts/ml_candle_binance"),
+    ]
+    for root in roots:
+        if not root.exists():
             continue
-        if meta.get("model_id") == model_id:
-            meta.setdefault("artifact_dir", str(path.parent))
-            return meta
+        for path in root.rglob("metrics.json"):
+            try:
+                reg = path.parent / "registry_entry.json"
+                if reg.exists():
+                    meta = json.loads(reg.read_text(encoding="utf-8"))
+                    if meta.get("model_id") == model_id:
+                        meta["artifact_dir"] = str(path.parent)
+                        return meta
+                if path.parent.name == model_id:
+                    meta = json.loads(path.read_text(encoding="utf-8"))
+                    meta.setdefault("model_id", model_id)
+                    meta["artifact_dir"] = str(path.parent)
+                    return meta
+            except (OSError, json.JSONDecodeError, TypeError):
+                continue
     return None
 
 

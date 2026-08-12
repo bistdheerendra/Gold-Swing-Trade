@@ -18,6 +18,10 @@
   --color-bull: #3ecf8e;
   --color-bear: #ef6b6b;
   --color-wait: #c9b27a;
+  --color-binance: #fed850;
+  --color-binance-ink: #0b0e11;
+  --color-binance-green: #0ecb81;
+  --color-binance-red: #f6465d;
 }
 
 .input {

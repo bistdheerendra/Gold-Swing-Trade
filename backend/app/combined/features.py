@@ -54,9 +54,23 @@ def build_feature_row(
     entry_window = windowed[entry_tf]
     local_idx = len(entry_window) - 1
 
-    ta = TechnicalAnalysisEngine().analyze(entry_window, as_of_index=local_idx)
-    smc = SmcEngine().analyze(entry_window, as_of_index=local_idx)
-    mtf = MultiTimeframeAnalyzer().analyze(windowed, as_of=candle_close_time(bar, entry_tf))
+    ta = TechnicalAnalysisEngine().analyze(
+        entry_window,
+        symbol=bar.symbol,
+        timeframe=entry_tf,
+        as_of_index=local_idx,
+    )
+    smc = SmcEngine().analyze(
+        entry_window,
+        symbol=bar.symbol,
+        timeframe=entry_tf,
+        as_of_index=local_idx,
+    )
+    mtf = MultiTimeframeAnalyzer().analyze(
+        windowed,
+        symbol=bar.symbol,
+        as_of=candle_close_time(bar, entry_tf),
+    )
 
     features = FeatureBuilder().build_with_close(
         bar=bar,

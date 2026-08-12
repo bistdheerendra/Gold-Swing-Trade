@@ -74,7 +74,7 @@ export function CombinedSignalPanel({
   };
 
   return (
-    <div className="space-y-4" data-testid="combined-signal-panel">
+    <div className="space-y-3" data-testid="combined-signal-panel">
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -104,13 +104,20 @@ export function CombinedSignalPanel({
       {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
       {data ? (
-        <div className="space-y-3">
-          <div className={`rounded-xl border p-4 text-center ${tone(data.direction)}`}>
-            <p className="text-xs uppercase tracking-[0.2em] text-gold-muted">Final</p>
-            <p className="mt-1 break-words font-display text-2xl sm:text-3xl">{data.direction}</p>
-            <p className="mt-2 text-xs text-muted">{data.ml_status}</p>
+        <div className="max-w-full space-y-2.5 rounded-xl border border-line/60 bg-ink/30 p-3">
+          <div
+            className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg border px-3 py-2 ${tone(data.direction)}`}
+          >
+            <span className="text-[10px] uppercase tracking-[0.18em] text-gold-muted">
+              Final
+            </span>
+            <span className="font-display text-xl leading-none sm:text-2xl">
+              {data.direction}
+            </span>
+            <span className="text-[11px] text-muted">{data.ml_status}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             <Stat label="Rule signal" value={data.rule_signal} />
             <Stat label="Rule score" value={`${data.rule_score}/100`} />
             <Stat label="ML prediction" value={data.ml_prediction ?? "—"} />
@@ -141,42 +148,51 @@ export function CombinedSignalPanel({
               }
             />
           </div>
+
           {!data.probability_calibrated ? (
-            <p className="text-[11px] text-muted">
+            <p className="text-[10px] text-muted">
               probability_calibrated=false — do not treat as win odds
             </p>
           ) : null}
-          <Row
-            label="Entry"
-            value={
-              data.entry
-                ? `${formatPrice(data.entry.low)} – ${formatPrice(data.entry.high)}`
-                : "—"
-            }
-          />
-          <Row
-            label="SL"
-            value={data.stop_loss != null ? formatPrice(data.stop_loss) : "—"}
-          />
-          <Row
-            label="TP1"
-            value={
-              data.targets[0]
-                ? `${formatPrice(data.targets[0].price)} · RR ${data.targets[0].rr}`
-                : "—"
-            }
-          />
-          <Block title="Rule reasons" items={data.rule_reasons} />
-          <Block title="ML reasons" items={data.ml_reasons} />
-          <Block title="Risks" items={data.risks} />
+
+          <div className="rounded-lg border border-gold/25 bg-panel/40 px-3 py-2">
+            <p className="mb-1.5 text-[10px] uppercase tracking-wider text-gold-muted">
+              Levels
+            </p>
+            <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
+              <Level label="Entry" value={
+                data.entry
+                  ? `${formatPrice(data.entry.low)} – ${formatPrice(data.entry.high)}`
+                  : "—"
+              } />
+              <Level
+                label="SL"
+                value={data.stop_loss != null ? formatPrice(data.stop_loss) : "—"}
+              />
+              <Level
+                label="TP1"
+                value={
+                  data.targets[0]
+                    ? `${formatPrice(data.targets[0].price)} · RR ${data.targets[0].rr}`
+                    : "—"
+                }
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <Block title="Rule reasons" items={data.rule_reasons} />
+            <Block title="ML reasons" items={data.ml_reasons} />
+            <Block title="Risks" items={data.risks} />
+          </div>
         </div>
       ) : (
         <p className="text-sm text-muted">Run analyze to load Rule + ML signal.</p>
       )}
 
       {compare ? (
-        <div className="rounded-xl border border-line/60 p-3 text-sm overflow-x-auto">
-          <p className="mb-2 text-xs uppercase tracking-wider text-gold-muted">
+        <div className="max-w-2xl rounded-xl border border-line/60 bg-ink/30 p-3 text-sm overflow-x-auto">
+          <p className="mb-1 text-xs uppercase tracking-wider text-gold-muted">
             RULE ONLY vs RULE + ML · {compare.split}
           </p>
           <p className="mb-2 text-[11px] text-muted">
@@ -222,30 +238,36 @@ export function CombinedSignalPanel({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-line/40 p-2">
-      <p className="text-[10px] uppercase text-gold-muted">{label}</p>
-      <p className="text-cream">{value}</p>
+    <div className="rounded-md border border-line/40 px-2 py-1.5">
+      <p className="text-[9px] uppercase tracking-wide text-gold-muted">{label}</p>
+      <p className="truncate text-xs text-cream sm:text-sm" title={value}>
+        {value}
+      </p>
     </div>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Level({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-2 text-sm">
+    <>
       <span className="text-muted">{label}</span>
-      <span className="text-cream">{value}</span>
-    </div>
+      <span className="tabular-nums text-cream">{value}</span>
+    </>
   );
 }
 
 function Block({ title, items }: { title: string; items: string[] }) {
   if (!items?.length) return null;
   return (
-    <div>
-      <p className="mb-1 text-[10px] uppercase tracking-wider text-gold-muted">{title}</p>
-      <ul className="space-y-1 text-xs text-muted">
+    <div className="rounded-lg border border-line/40 bg-panel/30 px-2.5 py-2">
+      <p className="mb-1 text-[10px] uppercase tracking-wider text-gold-muted">
+        {title}
+      </p>
+      <ul className="space-y-0.5 text-[11px] leading-snug text-muted">
         {items.slice(0, 6).map((r) => (
-          <li key={r}>• {r}</li>
+          <li key={r} className="break-words">
+            • {r}
+          </li>
         ))}
       </ul>
     </div>

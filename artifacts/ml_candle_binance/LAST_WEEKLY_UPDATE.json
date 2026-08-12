@@ -1,0 +1,9 @@
+{
+  "running": false,
+  "last_success_at": "2026-08-12T11:43:29.903937+00:00",
+  "last_run_at": "2026-08-12T11:43:29.903937+00:00",
+  "last_status": "ok",
+  "last_model_id": "binance_paxgusdt_direction_logistic_17813fb9",
+  "last_error": null,
+  "seeded_from_selected_model": true
+}

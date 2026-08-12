@@ -389,6 +389,51 @@ export async function fetchStrategyHistory(options?: {
   );
 }
 
+export type BinanceSuggestionResponse = {
+  enabled?: boolean;
+  as_of?: string;
+  symbol?: string;
+  source?: string;
+  model_id?: string;
+  model_type?: string;
+  target?: string;
+  raw_prediction?: string | null;
+  mapped_direction?: string;
+  signal?: string;
+  suggestion?: string;
+  confidence?: number;
+  bar_close?: number;
+  entry?: { low: number; high: number; preferred: number } | null;
+  stop_loss?: number | null;
+  targets?: Array<{ price: number; rr: number; label?: string }>;
+  primary_rr?: number | null;
+  atr?: number | null;
+  level_errors?: string[];
+  train_span_months?: number;
+  train_span_label?: string;
+  train_from?: string;
+  train_to?: string;
+  disclaimer?: string;
+  phase12_status?: string;
+  affects_delta_strategy?: boolean;
+  error?: string;
+  generated_at?: string;
+};
+
+/** Research sidecar — Binance PAXGUSDT ML suggestion (not Delta GO). */
+export async function fetchBinanceSuggestion(options?: {
+  modelId?: string;
+  limit?: number;
+}): Promise<BinanceSuggestionResponse> {
+  const params = new URLSearchParams({
+    limit: String(options?.limit ?? 400),
+  });
+  if (options?.modelId) params.set("model_id", options.modelId);
+  return apiGet<BinanceSuggestionResponse>(
+    `/api/research/binance-suggest?${params.toString()}`,
+  );
+}
+
 export type BacktestTradeDto = {
   trade_id: string;
   signal_id: string;

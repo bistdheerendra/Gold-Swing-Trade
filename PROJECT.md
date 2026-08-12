@@ -454,6 +454,7 @@ Gold-themed trading terminal with:
 | [docs/phase-11.11-post-fix-backtest.md](docs/phase-11.11-post-fix-backtest.md) | Phase 11.11 post-SL-fix backtest re-run |
 | [docs/monitoring-checklist.md](docs/monitoring-checklist.md) | Post-11.11 recheck cadence + escalation gates |
 | [docs/recheck-log.md](docs/recheck-log.md) | Lightweight recheck log entries |
+| [docs/binance-paxgusdt-research.md](docs/binance-paxgusdt-research.md) | Binance PAXGUSDT ML suggestion sidecar |
 | [docs/chart.md](docs/chart.md) | Chart layer |
 | [docs/technical-analysis.md](docs/technical-analysis.md) | TA engine |
 | [docs/smc-rules.md](docs/smc-rules.md) | Exact SMC definitions |
@@ -502,8 +503,9 @@ Preferred next work:
 
 1. Every ~4 weeks (or on a clear regime shift): lightweight recheck per the monitoring checklist  
 2. Escalate to a full Phase-11.6-style diagnosis only when checklist thresholds fire (e.g. ~80–100 trades, or ALL expectancy &gt; +0.15R for two consecutive rechecks)  
-3. Optional: longer XAUUSD reference study (do not blend with Delta PAXGUSD)  
-4. Strategy GO still required (positive held-out expectancy on a defendable sample) before paper trading
+3. Optional: Binance PAXGUSDT research sidecar ([docs/binance-paxgusdt-research.md](docs/binance-paxgusdt-research.md)) — advisory only; weekly auto backfill/retrain while API runs (`BINANCE_WEEKLY_UPDATE_ENABLED`); do not blend into Delta GO  
+4. Optional: longer XAUUSD reference study (do not blend with Delta PAXGUSD)  
+5. Strategy GO still required (positive held-out expectancy on a defendable sample) before paper trading
 
 ```text
 START PHASE 12

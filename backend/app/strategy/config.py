@@ -50,6 +50,8 @@ class StrategyConfig(BaseModel):
     sl_buffer: float = 0.5  # absolute price buffer beyond structure
     sl_atr_buffer_mult: float = 0.15  # extra ATR fraction for SL buffer
     max_signal_age_bars: int = 12  # entry TF bars before EXPIRED
+    # Ignore OB/FVG entry zones farther than this many ATRs from spot (stale pullback plans)
+    max_entry_distance_atr: float = 2.5
 
     liquidity_required: bool = False
     require_structure_confirmation: bool = True

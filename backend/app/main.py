@@ -12,6 +12,7 @@ from app.api.health import router as health_router
 from app.api.market import router as market_router
 from app.api.ml import router as ml_router
 from app.api.mtf import router as mtf_router
+from app.api.research import router as research_router
 from app.api.risk import router as risk_router
 from app.api.smc import router as smc_router
 from app.api.strategy import router as strategy_router
@@ -37,8 +38,17 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             "market_data_store": settings.market_data_store,
         },
     )
-    yield
-    logger.info("shutting_down_app")
+    from app.research.binance_scheduler import (
+        start_binance_weekly_scheduler,
+        stop_binance_weekly_scheduler,
+    )
+
+    start_binance_weekly_scheduler()
+    try:
+        yield
+    finally:
+        await stop_binance_weekly_scheduler()
+        logger.info("shutting_down_app")
 
 
 app = FastAPI(
@@ -70,6 +80,7 @@ app.include_router(strategy_router, prefix="/api")
 app.include_router(backtest_router, prefix="/api")
 app.include_router(ml_router, prefix="/api")
 app.include_router(combined_router, prefix="/api")
+app.include_router(research_router, prefix="/api")
 app.include_router(risk_router, prefix="/api")
 
 

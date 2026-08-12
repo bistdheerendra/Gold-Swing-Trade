@@ -159,11 +159,11 @@ def test_poor_rr_validation() -> None:
     assert any("RR" in e or "minimum" in e.lower() or "wrong side" in e.lower() for e in errs)
 
 
-def test_buy_sl_stays_below_entry_when_price_ran_above_fvg() -> None:
-    """Path B regression: last close above FVG must not place SL above entry.preferred."""
+def test_buy_sl_stays_below_entry_when_price_slightly_above_fvg() -> None:
+    """Path B regression: modest chase above FVG must not place SL above entry.preferred."""
     from app.smc.schemas import FvgEvent, FvgLifecycle, SmcEventType
 
-    cfg = StrategyConfig(min_rr=1.5, sl_buffer=0.5)
+    cfg = StrategyConfig(min_rr=1.5, sl_buffer=0.5, max_entry_distance_atr=2.5)
     fvg = FvgEvent(
         id="fvg1",
         type=SmcEventType.BULLISH_FVG,
@@ -187,7 +187,7 @@ def test_buy_sl_stays_below_entry_when_price_ran_above_fvg() -> None:
         timeframe="1h",
         created_index=12,
         confirm_index=14,
-        price=4391.0,
+        price=4380.0,
     )
     smc = SmcAnalysisResult(
         symbol="PAXGUSD",
@@ -213,14 +213,14 @@ def test_buy_sl_stays_below_entry_when_price_ran_above_fvg() -> None:
             range_high=4410.0,
             range_low=4360.0,
             equilibrium=4385.0,
-            current_price=4400.0,
+            current_price=4385.0,
             zone=DealingZone.PREMIUM,
         ),
     )
-    # Price has already run above the FVG entry zone
+    # Spot still near FVG (within max_entry_distance_atr) — pullback plan OK
     levels = compute_levels(
         bullish=True,
-        bars_15m=[_bar(4400.0)],
+        bars_15m=[_bar(4385.0)],
         smc_1h=smc,
         smc_15m=smc,
         atr=8.0,
@@ -237,12 +237,81 @@ def test_buy_sl_stays_below_entry_when_price_ran_above_fvg() -> None:
         stop_loss=levels.stop_loss,
         targets=levels.targets,
         config=cfg,
+        spot=4385.0,
     )
     assert not any("wrong side" in e.lower() or "must be below" in e.lower() for e in errs)
 
 
-def test_sell_sl_stays_above_entry_when_price_ran_below_zone() -> None:
-    cfg = StrategyConfig(min_rr=1.5, sl_buffer=0.5)
+def test_stale_buy_rejected_when_spot_far_above_fvg_and_past_tps() -> None:
+    """Do not keep advertising an old FVG BUY after price has run through its TPs."""
+    from app.smc.schemas import FvgEvent, FvgLifecycle, SmcEventType
+
+    cfg = StrategyConfig(min_rr=1.5, sl_buffer=0.5, max_entry_distance_atr=2.5)
+    fvg = FvgEvent(
+        id="fvg1",
+        type=SmcEventType.BULLISH_FVG,
+        direction=SmcDirection.BULLISH,
+        timeframe="15m",
+        created_index=10,
+        confirm_index=11,
+        high=4376.1,
+        low=4368.91,
+        price=4372.505,
+        size=4376.1 - 4368.91,
+        lifecycle=FvgLifecycle.ACTIVE,
+        filled=False,
+        valid=True,
+    )
+    smc = SmcAnalysisResult(
+        symbol="PAXGUSD",
+        timeframe="1h",
+        bar_count=20,
+        as_of_index=19,
+        config=SmcConfig(),
+        structure=SmcStructureSummary(
+            bias=SmcDirection.BULLISH,
+            last_swing_low=SmcEvent(
+                id="sl",
+                type=SmcEventType.SWING_LOW,
+                direction=SmcDirection.BULLISH,
+                timeframe="1h",
+                created_index=5,
+                confirm_index=7,
+                price=4360.0,
+            ),
+            last_swing_high=SmcEvent(
+                id="sh",
+                type=SmcEventType.SWING_HIGH,
+                direction=SmcDirection.BEARISH,
+                timeframe="1h",
+                created_index=15,
+                confirm_index=17,
+                price=4412.0,
+            ),
+        ),
+        fvg=[fvg],
+        dealing_range=DealingRange(
+            range_high=4418.0,
+            range_low=4360.0,
+            equilibrium=4389.0,
+            current_price=4423.0,
+            zone=DealingZone.PREMIUM,
+        ),
+    )
+    levels = compute_levels(
+        bullish=True,
+        bars_15m=[_bar(4423.0)],
+        smc_1h=smc,
+        smc_15m=smc,
+        atr=8.0,
+        config=cfg,
+    )
+    assert levels.entry is None
+    assert any("near spot" in e.lower() for e in levels.errors)
+
+
+def test_sell_sl_stays_above_entry_when_price_slightly_below_zone() -> None:
+    cfg = StrategyConfig(min_rr=1.5, sl_buffer=0.5, max_entry_distance_atr=2.5)
     zone = ZoneEvent(
         id="sup1",
         type=SmcEventType.SUPPLY_ZONE,
@@ -261,7 +330,7 @@ def test_sell_sl_stays_above_entry_when_price_ran_below_zone() -> None:
         timeframe="1h",
         created_index=12,
         confirm_index=14,
-        price=1995.0,  # between zone and fallen price
+        price=2002.0,  # between zone and modestly lower price
     )
     smc = SmcAnalysisResult(
         symbol="XAUUSD",
@@ -288,13 +357,13 @@ def test_sell_sl_stays_above_entry_when_price_ran_below_zone() -> None:
             range_high=2015.0,
             range_low=1975.0,
             equilibrium=1995.0,
-            current_price=1988.0,
+            current_price=1998.0,
             zone=DealingZone.DISCOUNT,
         ),
     )
     levels = compute_levels(
         bullish=False,
-        bars_15m=[_bar(1988.0)],
+        bars_15m=[_bar(1998.0)],
         smc_1h=smc,
         smc_15m=None,
         atr=5.0,
