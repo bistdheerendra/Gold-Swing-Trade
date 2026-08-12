@@ -51,6 +51,7 @@ def compute_levels(
     sl = _stop_loss(
         bullish=bullish,
         price=price,
+        entry=entry,
         smc=smc,
         smc_15m=smc_15m,
         buffer=buffer,
@@ -68,7 +69,7 @@ def compute_levels(
         if risk <= 0:
             errors.append("Invalid risk distance (entry == SL)")
         else:
-            # Side checks
+            # Side checks — SL must respect entry geometry, not only last close
             if bullish and sl >= pref:
                 errors.append("BUY SL must be below entry")
             if (not bullish) and sl <= pref:
@@ -226,10 +227,26 @@ def _stop_loss(
     *,
     bullish: bool,
     price: float,
+    entry: Optional[EntryZone],
     smc: Optional[SmcAnalysisResult],
     smc_15m: Optional[SmcAnalysisResult],
     buffer: float,
 ) -> Optional[float]:
+    """Structural SL anchored to the entry zone (not only last close).
+
+    Bug fixed (Path B): previously candidates were filtered with ``c < price``.
+    When price had run *above* an FVG/OB entry zone, a swing between entry and
+    price could be chosen as SL — leaving SL on the wrong side of
+    ``entry.preferred`` and failing validation ("BUY SL must be below entry").
+    """
+    # BUY: SL must sit below the entry zone floor; SELL: above the ceiling.
+    if entry is not None:
+        anchor = float(entry.low) if bullish else float(entry.high)
+        preferred = float(entry.preferred)
+    else:
+        anchor = price
+        preferred = price
+
     candidates: List[float] = []
     for src in (smc_15m, smc):
         if src is None:
@@ -256,20 +273,19 @@ def _stop_loss(
         if (not bullish) and src.structure.last_swing_high and src.structure.last_swing_high.price:
             candidates.append(float(src.structure.last_swing_high.price) + buffer)
 
-    if not candidates:
-        # Fallback structural buffer from price
-        return round(price - buffer * 3 if bullish else price + buffer * 3, 4)
-
     if bullish:
-        # SL below entry — pick the highest SL still below price (tightest valid)
-        below = [c for c in candidates if c < price]
-        if not below:
-            return round(min(candidates), 4)
-        return round(max(below), 4)
-    above = [c for c in candidates if c > price]
-    if not above:
-        return round(max(candidates), 4)
-    return round(min(above), 4)
+        # Strictly below entry zone / preferred (and not above last close either)
+        ceiling = min(anchor, preferred, price)
+        valid = [c for c in candidates if c < ceiling]
+        if valid:
+            return round(max(valid), 4)  # tightest still safely below entry
+        return round(ceiling - max(buffer * 3, abs(ceiling) * 0.0005), 4)
+
+    floor = max(anchor, preferred, price)
+    valid = [c for c in candidates if c > floor]
+    if valid:
+        return round(min(valid), 4)
+    return round(floor + max(buffer * 3, abs(floor) * 0.0005), 4)
 
 
 def _candidate_targets(

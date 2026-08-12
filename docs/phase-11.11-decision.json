@@ -1,0 +1,12 @@
+{
+  "decision": "NO_GO",
+  "test_expectancy_r": 0.407733,
+  "test_trades": 9,
+  "all_expectancy_r": 0.069786,
+  "all_trades": 53,
+  "train_val_expectancy_r": 0.160747,
+  "signal_unblocks_train_val": 172,
+  "signal_unblocks_test": 59,
+  "entered_unblocks_train_val": 32,
+  "entered_unblocks_test": 5
+}

@@ -36,6 +36,8 @@ DEFAULT_TWELVEDATA_SYMBOL_MAP: Dict[str, str] = {
 }
 
 _DELTA_RESOLUTION: Dict[Timeframe, str] = {
+    Timeframe.M1: "1m",
+    Timeframe.M5: "5m",
     Timeframe.M15: "15m",
     Timeframe.M30: "30m",
     Timeframe.H1: "1h",
@@ -44,6 +46,8 @@ _DELTA_RESOLUTION: Dict[Timeframe, str] = {
 }
 
 _TWELVE_INTERVAL: Dict[Timeframe, str] = {
+    Timeframe.M1: "1min",
+    Timeframe.M5: "5min",
     Timeframe.M15: "15min",
     Timeframe.M30: "30min",
     Timeframe.H1: "1h",

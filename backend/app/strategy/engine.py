@@ -409,10 +409,12 @@ class StrategyEngine:
                 status=status,
                 score=side_score,
                 score_label=f"{side_score}/100 strategy condition score",
-                entry=None if direction == SignalDirection.NO_TRADE else levels.entry,
-                stop_loss=None if direction == SignalDirection.NO_TRADE else levels.stop_loss,
-                targets=[] if direction == SignalDirection.NO_TRADE else levels.targets,
-                primary_rr=None if direction == SignalDirection.NO_TRADE else levels.primary_rr,
+                # Keep computed levels for research display even on NO_TRADE/WAIT.
+                # UI must treat them as candidates when signal is not BUY/SELL.
+                entry=levels.entry,
+                stop_loss=levels.stop_loss,
+                targets=list(levels.targets),
+                primary_rr=levels.primary_rr,
                 market_context=context,
                 conditions=list(conditions),
                 reasons=reasons,
@@ -427,6 +429,8 @@ class StrategyEngine:
                     "buy_score": buy_score,
                     "sell_score": sell_score,
                     "as_of_index_15m": idx_15m,
+                    "levels_are_candidates": direction
+                    not in (SignalDirection.BUY, SignalDirection.SELL),
                 },
             )
             current = signal

@@ -3,9 +3,9 @@
 **Location:** `Desktop/Gold Trader`  
 **Product name:** Gold Swing AI  
 **Folder name:** Gold Trader  
-**Current phase:** **11.9 — Liquidity Sweep Investigation (complete — inconclusive; no rule change)**  
-**Next phase:** **Blocked** — Phase 12 still NO-GO; accumulate more PAXGUSD history before structural edits  
-**Last updated:** 2026-08-09
+**Current phase:** **11.11 — Post-Fix Backtest Re-Run (complete; NO-GO stands)**  
+**Next phase:** **Blocked** — Phase 12 still NO-GO; monitor per [docs/monitoring-checklist.md](docs/monitoring-checklist.md)  
+**Last updated:** 2026-08-12
 
 ---
 
@@ -79,6 +79,8 @@ Market Data (real free-tier)  ← Phase 11.5
   → Diagnosis Review             ← Phase 11.7 (no rewrite; NO-GO)
   → Candle-Level ML Labeling     ← Phase 11.8 (research; weak skill)
   → Liquidity Sweep Investigation← Phase 11.9 (inconclusive; no rule change)
+  → Trading Session Overlay      ← Phase 11.10 (UI/reference only)
+  → Post-Fix Backtest Re-Run     ← Phase 11.11 (NO-GO stands)
   → Paper Trading + Alerts       ← Phase 12 (blocked)
   → Production Hardening
 ```
@@ -142,6 +144,9 @@ Gold Trader/
 | 11.7 | Diagnosis Review + Conditional Rule Revision | **COMPLETE — no rewrite; NO-GO** |
 | 11.8 | Candle-Level ML Labeling | **COMPLETE — research; weak skill** |
 | 11.9 | Liquidity Sweep Investigation | **COMPLETE — inconclusive; no rule change** |
+| 11.10 | Trading Session Overlay | **COMPLETE** |
+| 11.10.1 | DST-Aware Session Windows | **COMPLETE** |
+| 11.11 | Post-Fix Backtest Re-Run (SL geometry) | **COMPLETE — NO-GO stands** |
 | 12 | Paper Trading + Live Monitoring + Alerts | **BLOCKED** |
 | 13 | Production Hardening & Deployment | Pending |
 
@@ -256,6 +261,29 @@ See [docs/roadmap.md](docs/roadmap.md) for full phase descriptions.
 - Docs: [docs/phase-11.9-liquidity-sweep-investigation.md](docs/phase-11.9-liquidity-sweep-investigation.md)
 - Script: `backend/scripts/phase_11_9_liquidity_sweep.py`
 
+### Phase 11.10 — Trading Session Overlay (**UI / reference only**)
+- Session windows (Asia / London / New York / London+NY Overlap) defined once in `backend/app/core/sessions.py` (IST labels, UTC computation)
+- `GET /api/market/sessions` (+ `/tag`) — display/reference; does **not** feed strategy / combined / risk
+- Chart: toggleable semi-transparent session bands on **15m / 30m / 1h** only (hidden on 4h/1d)
+- Dashboard: session reference table + live “active now” indicator
+- Docs: [docs/trading-sessions.md](docs/trading-sessions.md)
+
+### Phase 11.10.1 — DST-Aware Session Windows
+- London / New York use local 08:00–17:00 via `zoneinfo` (`Europe/London`, `America/New_York`) per candle date
+- Overlap derived as London ∩ New York (no separate fixed UTC constant)
+- Asia remains fixed UTC (no Japanese DST)
+- Historical chart bars use that bar’s DST state; live “active now” follows today’s offsets
+- Docs: [docs/trading-sessions.md](docs/trading-sessions.md) updated
+
+### Phase 11.11 — Post-Fix Backtest Re-Run (**NO-GO stands**)
+- Re-ran Phase 11.6 methodology on the same 16 382×15m PAXGUSD window after Path B `_stop_loss` fix
+- Only variable: entry-anchored SL; thresholds / sweep logic unchanged
+- ALL expectancy essentially flat (+0.072R → +0.070R) while trades 34→53 and max DD ~5.4%→~11.4%
+- Held-out TEST flips −0.39R (n=6) → +0.41R (n=9) — too thin to trust
+- SL-geometry unblocks are real and frequent at signal level; filled subset is mixed W/L — bug was not a hidden edge filter
+- Docs: [docs/phase-11.11-post-fix-backtest.md](docs/phase-11.11-post-fix-backtest.md)
+- Script: `backend/scripts/phase_11_11_post_fix_backtest.py`
+
 ---
 
 ## 8. API reference (current)
@@ -269,6 +297,8 @@ Base URL (dev): `http://localhost:8000`
 | GET | `/api/ready` | Readiness |
 | GET | `/api/market/status` | Provider/store counts + health |
 | GET | `/api/market/ohlcv` | Query bars |
+| GET | `/api/market/sessions` | Session defs + active now (Phase 11.10 display) |
+| GET | `/api/market/sessions/tag` | Tag one UTC timestamp with session(s) |
 | POST | `/api/market/ingest` | Fetch → validate → store |
 | POST | `/api/market/backfill` | Multi-symbol/TF real historical pull |
 | POST | `/api/market/seed` | Seed from active **real** provider |
@@ -373,10 +403,10 @@ cd frontend && npm test
 
 Gold-themed trading terminal with:
 
-### Layout (2026-08-09 polish)
-- **Full-width price chart** on top (EMA + SMC overlays)
+### Layout (2026-08-12 polish)
+- **Full-width price chart** on top (EMA + SMC + optional session bands)
 - **Equal three-column content grid** below (no empty center gap):
-  - Left: Market Overview, Multi-Timeframe, SMC Analysis  
+  - Left: Market Overview, **Trading Sessions (IST)**, Multi-Timeframe, SMC Analysis  
   - Center: SMC Overlays, TA Snapshot, EMA toggles, Signal History  
   - Right: Current Signal, Combined Signal, Risk & Position, Explainability  
 - Nav to Backtest, ML Dataset, ML Model Lab, Risk Management pages
@@ -385,6 +415,7 @@ Gold-themed trading terminal with:
 - Candlestick zoom / pan / crosshair / OHLC banner  
 - EMA 20 / 50 / 100 / 200 (toggleable)  
 - SMC overlays (toggleable) — **overlay toggles update markers/price lines only** (no full chart rebuild / blank flash)  
+- **Trading session bands** (Phase 11.10) — shaded Asia / London / NY / Overlap on **15m / 30m / 1h**; toggleable without chart rebuild; hidden on 4h/1d  
 - Price lines cleared via `removePriceLine` (Lightweight Charts v4)
 
 ### AI Loader (`AiLoader`)
@@ -397,6 +428,7 @@ Gold-themed trading terminal with:
 - Signal history table  
 - Combined Signal (Rule + ML) panel  
 - PAXGUSD risk calculator + trade plan status  
+- Session reference table + live “active now” (display only)  
 - Research-only disclaimers throughout  
 
 ---
@@ -418,6 +450,10 @@ Gold-themed trading terminal with:
 | [docs/ml-labeling.md](docs/ml-labeling.md) | Phase 11.8 triple-barrier candle labels |
 | [docs/phase-11.8-candle-ml-results.md](docs/phase-11.8-candle-ml-results.md) | Candle-level dataset + model results |
 | [docs/phase-11.9-liquidity-sweep-investigation.md](docs/phase-11.9-liquidity-sweep-investigation.md) | Phase 11.9 sweep condition investigation |
+| [docs/trading-sessions.md](docs/trading-sessions.md) | Phase 11.10 session windows + chart overlay |
+| [docs/phase-11.11-post-fix-backtest.md](docs/phase-11.11-post-fix-backtest.md) | Phase 11.11 post-SL-fix backtest re-run |
+| [docs/monitoring-checklist.md](docs/monitoring-checklist.md) | Post-11.11 recheck cadence + escalation gates |
+| [docs/recheck-log.md](docs/recheck-log.md) | Lightweight recheck log entries |
 | [docs/chart.md](docs/chart.md) | Chart layer |
 | [docs/technical-analysis.md](docs/technical-analysis.md) | TA engine |
 | [docs/smc-rules.md](docs/smc-rules.md) | Exact SMC definitions |
@@ -450,20 +486,23 @@ Gold-themed trading terminal with:
 13. **Phase 11.7 — insufficient evidence for a Phase 6 structural rewrite:** win rate (~33–38%) and payoff (TEST PF ~0.55) both look weak, and blockers *suggest* location/MTF/RR friction, but n is too small to localize a safe structural change. Forcing confluence edits now would be overfitting with a bigger blast radius than threshold tweaks. Prefer more history (and/or separate XAUUSD reference study) before reopening rule surgery.  
 14. **Phase 11.8 — candle-level ML is research-only:** full-history triple-barrier dataset (~16 294 rows) replaces the thin ~34 trade-outcome sample for *ML research*, but held-out directional skill is weak (~2.7pp over majority). Artifacts live in `data/ml_datasets_candle/` and `artifacts/ml_candle/`. **Not** wired into Phase 6/10. UI `bar_limit=220` remains preview-only.  
 15. **Phase 11.9 — liquidity sweep investigation inconclusive:** on TRAIN+VAL, sweep is unmet on ~78% of high-score no-trade samples (15-pt score gap) but sole unmet only ~6%. 1H reclaim sweeps are sparse (avg ~138 bars between unique events; ~23% of samples have any sweep in 40 bars). Widening `recent_sweep_bars` did nothing; 1H→15m fallback added trades but worsened VAL expectancy. **No production rule change.** Live `✗ Liquidity Sweep` on NO_TRADE/INVALIDATED cards is often a listed unmet condition, not a hard `liquidity_required` veto.
+16. **Phase 11.11 — SL geometry fix does not clear Phase 12:** controlled re-run on the same Phase 11.6 window shows ALL expectancy ~unchanged (+0.07R) with more trades and worse max DD; TEST flips positive on n=9 only. Keep the Path B SL fix; do **not** treat that as a GO.
 
 ---
 
 ## 15. Next step
 
-Phase 11.9 is complete (investigation only). **Phase 12 remains NO-GO.** Do not loosen liquidity sweep in production without a pre-registered recalibration pass.
+Phase 11.11 re-checked the Phase 11.6 NO-GO after the Path B SL fix — **NO-GO still stands.** Phase 11.10.1 sessions remain UI/reference only. Do not loosen liquidity sweep in production without a pre-registered recalibration pass.
+
+**Operating mode:** patience + scheduled monitoring — not more strategy code. Follow [docs/monitoring-checklist.md](docs/monitoring-checklist.md); log each pass in [docs/recheck-log.md](docs/recheck-log.md).
 
 Do **not** run `START PHASE 12`. Do **not** auto-wire candle models into live signals.
 
 Preferred next work:
 
-1. Let Delta PAXGUSD history grow; re-run rule backtests and candle ML periodically  
-2. Optional: longer XAUUSD reference study (do not blend with Delta PAXGUSD)  
-3. Only after a separate, explicit decision: consider wiring a *validated* ML filter — not before  
+1. Every ~4 weeks (or on a clear regime shift): lightweight recheck per the monitoring checklist  
+2. Escalate to a full Phase-11.6-style diagnosis only when checklist thresholds fire (e.g. ~80–100 trades, or ALL expectancy &gt; +0.15R for two consecutive rechecks)  
+3. Optional: longer XAUUSD reference study (do not blend with Delta PAXGUSD)  
 4. Strategy GO still required (positive held-out expectancy on a defendable sample) before paper trading
 
 ```text

@@ -21,6 +21,8 @@ _SYMBOL_MAP: Dict[str, str] = {
 }
 
 _RESOLUTION: Dict[Timeframe, str] = {
+    Timeframe.M1: "1m",
+    Timeframe.M5: "5m",
     Timeframe.M15: "15m",
     Timeframe.M30: "30m",
     Timeframe.H1: "1h",
@@ -48,7 +50,9 @@ class DeltaIndiaMarketDataProvider(MarketDataProvider):
         base_url: str = DELTA_INDIA_BASE,
         timeout_seconds: float = 30.0,
     ) -> None:
-        self.base_url = base_url.rstrip("/")
+        # DELTA_INDIA_BASE_URL may be host-only (…delta.exchange); API paths need /v2
+        root = base_url.rstrip("/")
+        self.base_url = root if root.endswith("/v2") else f"{root}/v2"
         self.timeout = timeout_seconds
 
     def map_symbol(self, symbol: str) -> str:
@@ -132,7 +136,10 @@ class DeltaIndiaMarketDataProvider(MarketDataProvider):
         url = f"{self.base_url}/tickers/{delta_symbol}"
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.get(url, headers={"Accept": "application/json"})
-            resp.raise_for_status()
+            if resp.status_code >= 400:
+                raise RuntimeError(
+                    f"Delta ticker HTTP {resp.status_code}: {resp.text[:300]}"
+                )
             payload = resp.json()
         result = payload.get("result") or {}
         quotes = result.get("quotes") or {}

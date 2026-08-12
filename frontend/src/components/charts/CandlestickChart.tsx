@@ -19,6 +19,11 @@ import {
   fromChartTime,
 } from "../../lib/chartData";
 import { DEFAULT_EMA_PERIODS, type EmaPeriod } from "../../lib/ema";
+import { barsToSessionHistogram } from "../../lib/sessionBands";
+import {
+  supportsSessionBands,
+  type SessionDefinition,
+} from "../../lib/sessions";
 import { buildSmcMarkers, buildSmcPriceLevels } from "../../lib/smcOverlays";
 import {
   DEFAULT_SMC_OVERLAYS,
@@ -39,6 +44,11 @@ type CandlestickChartProps = {
   showEma?: Partial<Record<EmaPeriod, boolean>>;
   smc?: SmcAnalyzeResponse | null;
   smcVisibility?: SmcOverlayVisibility;
+  /** Session definitions from GET /api/market/sessions (single source of truth). */
+  sessionDefinitions?: readonly SessionDefinition[];
+  /** Show session background bands (intraday TFs only). Toggle — no chart rebuild. */
+  showSessionBands?: boolean;
+  timeframe?: string;
   onCrosshairOhlc?: (readout: OhlcReadout) => void;
   className?: string;
 };
@@ -51,6 +61,15 @@ const DEFAULT_EMA_VISIBILITY: Record<EmaPeriod, boolean> = {
 };
 
 type SmcLineHost = ISeriesApi<"Candlestick"> & { _smcLines?: IPriceLine[] };
+
+/** Show recent bars with breathing room instead of packing the full series. */
+const VISIBLE_BARS = 96;
+
+function focusRecentBars(chart: IChartApi, barCount: number) {
+  const from = Math.max(-2, barCount - VISIBLE_BARS);
+  const to = barCount + 6;
+  chart.timeScale().setVisibleLogicalRange({ from, to });
+}
 
 function clearSmcPriceLines(series: ISeriesApi<"Candlestick"> | null) {
   if (!series) return;
@@ -103,6 +122,32 @@ function applySmcOverlays(
   }
 }
 
+function applySessionBands(
+  series: ISeriesApi<"Histogram"> | null,
+  bars: readonly OHLCVBar[],
+  definitions: readonly SessionDefinition[],
+  visible: boolean,
+  timeframe: string | undefined,
+) {
+  if (!series) return;
+  const allow =
+    visible && Boolean(timeframe) && supportsSessionBands(timeframe ?? "");
+  try {
+    series.applyOptions({ visible: allow });
+    if (!allow || !definitions.length) {
+      series.setData([]);
+      return;
+    }
+    series.setData(barsToSessionHistogram(bars, definitions));
+  } catch {
+    try {
+      series.setData([]);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 /**
  * Reusable gold-themed candlestick chart with EMA overlays.
  * Zoom / pan via Lightweight Charts timeScale; crosshair emits OHLC.
@@ -113,17 +158,24 @@ export function CandlestickChartView({
   showEma = DEFAULT_EMA_VISIBILITY,
   smc = null,
   smcVisibility = DEFAULT_SMC_OVERLAYS,
+  sessionDefinitions = [],
+  showSessionBands = false,
+  timeframe,
   onCrosshairOhlc,
   className,
 }: CandlestickChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const sessionRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const emaRefs = useRef<Partial<Record<EmaPeriod, ISeriesApi<"Line">>>>({});
   const barsRef = useRef(bars);
   const smcRef = useRef(smc);
   const smcVisibilityRef = useRef(smcVisibility);
   const showEmaRef = useRef(showEma);
+  const sessionDefsRef = useRef(sessionDefinitions);
+  const showSessionBandsRef = useRef(showSessionBands);
+  const timeframeRef = useRef(timeframe);
   const onCrosshairRef = useRef(onCrosshairOhlc);
   const readyRef = useRef(false);
 
@@ -131,6 +183,9 @@ export function CandlestickChartView({
   smcRef.current = smc;
   smcVisibilityRef.current = smcVisibility;
   showEmaRef.current = showEma;
+  sessionDefsRef.current = sessionDefinitions;
+  showSessionBandsRef.current = showSessionBands;
+  timeframeRef.current = timeframe;
   onCrosshairRef.current = onCrosshairOhlc;
 
   // Create chart once (or when height changes)
@@ -147,8 +202,8 @@ export function CandlestickChartView({
         fontFamily: "Manrope, ui-sans-serif, system-ui, sans-serif",
       },
       grid: {
-        vertLines: { color: "rgba(58, 50, 36, 0.55)" },
-        horzLines: { color: "rgba(58, 50, 36, 0.55)" },
+        vertLines: { color: "rgba(58, 50, 36, 0.35)" },
+        horzLines: { color: "rgba(58, 50, 36, 0.35)" },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
@@ -157,11 +212,15 @@ export function CandlestickChartView({
       },
       rightPriceScale: {
         borderColor: "#3a3224",
+        scaleMargins: { top: 0.12, bottom: 0.14 },
       },
       timeScale: {
         borderColor: "#3a3224",
         timeVisible: true,
         secondsVisible: false,
+        barSpacing: 12,
+        minBarSpacing: 4,
+        rightOffset: 10,
       },
       handleScroll: {
         mouseWheel: true,
@@ -174,6 +233,18 @@ export function CandlestickChartView({
         mouseWheel: true,
         pinch: true,
       },
+    });
+
+    // Session bands behind candles (own scale, full-height translucent columns)
+    const sessionSeries = chart.addHistogramSeries({
+      priceScaleId: "sessions",
+      lastValueVisible: false,
+      priceLineVisible: false,
+      base: 0,
+    });
+    chart.priceScale("sessions").applyOptions({
+      visible: false,
+      scaleMargins: { top: 0, bottom: 0 },
     });
 
     const candles = chart.addCandlestickSeries({
@@ -225,6 +296,7 @@ export function CandlestickChartView({
 
     chartRef.current = chart;
     candleRef.current = candles;
+    sessionRef.current = sessionSeries;
     emaRefs.current = emaSeries;
     readyRef.current = true;
 
@@ -245,8 +317,15 @@ export function CandlestickChartView({
       smcRef.current,
       smcVisibilityRef.current,
     );
+    applySessionBands(
+      sessionSeries,
+      barsRef.current,
+      sessionDefsRef.current,
+      showSessionBandsRef.current,
+      timeframeRef.current,
+    );
     if (candleData.length > 0) {
-      chart.timeScale().fitContent();
+      focusRecentBars(chart, candleData.length);
     }
 
     const observer = new ResizeObserver((entries) => {
@@ -268,6 +347,7 @@ export function CandlestickChartView({
       chart.remove();
       chartRef.current = null;
       candleRef.current = null;
+      sessionRef.current = null;
       emaRefs.current = {};
     };
   }, [height]);
@@ -294,9 +374,16 @@ export function CandlestickChartView({
       smcRef.current,
       smcVisibilityRef.current,
     );
+    applySessionBands(
+      sessionRef.current,
+      bars,
+      sessionDefsRef.current,
+      showSessionBandsRef.current,
+      timeframeRef.current,
+    );
 
     if (candleData.length > 0) {
-      chartRef.current.timeScale().fitContent();
+      focusRecentBars(chartRef.current, candleData.length);
     }
   }, [bars]);
 
@@ -316,6 +403,18 @@ export function CandlestickChartView({
     if (!readyRef.current || !candleRef.current) return;
     applySmcOverlays(candleRef.current, barsRef.current, smc, smcVisibility);
   }, [smc, smcVisibility]);
+
+  // Session bands toggle / defs / TF — histogram only, no chart rebuild
+  useEffect(() => {
+    if (!readyRef.current) return;
+    applySessionBands(
+      sessionRef.current,
+      barsRef.current,
+      sessionDefinitions,
+      showSessionBands,
+      timeframe,
+    );
+  }, [sessionDefinitions, showSessionBands, timeframe]);
 
   return (
     <div
@@ -344,7 +443,7 @@ export function OhlcBanner({
 
   return (
     <div
-      className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 pb-2 text-[11px] font-medium tracking-wide text-muted sm:gap-x-4 sm:text-xs"
+      className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1 pb-3 text-[11px] font-medium tracking-wide text-muted sm:gap-x-5 sm:text-xs"
       data-testid="ohlc-banner"
     >
       <span>

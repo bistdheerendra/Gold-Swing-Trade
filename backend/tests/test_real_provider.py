@@ -107,6 +107,14 @@ async def test_delta_supports_30m_resolution_mapping() -> None:
 
 
 @pytest.mark.asyncio
+async def test_delta_supports_1m_5m_resolution_mapping() -> None:
+    from app.market.real_provider import _DELTA_RESOLUTION
+
+    assert _DELTA_RESOLUTION[Timeframe.M1] == "1m"
+    assert _DELTA_RESOLUTION[Timeframe.M5] == "5m"
+
+
+@pytest.mark.asyncio
 async def test_twelvedata_rejects_error_payload() -> None:
     start = datetime(2024, 6, 1, tzinfo=timezone.utc)
     end = start + timedelta(hours=2)

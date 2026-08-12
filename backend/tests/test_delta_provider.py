@@ -20,6 +20,18 @@ async def test_delta_symbol_map() -> None:
         p.map_symbol("BTCUSD")
 
 
+def test_delta_base_url_normalizes_v2() -> None:
+    """Host-only DELTA_INDIA_BASE_URL must still hit /v2/tickers (not 404)."""
+    host_only = DeltaIndiaMarketDataProvider(
+        base_url="https://api.india.delta.exchange"
+    )
+    assert host_only.base_url.endswith("/v2")
+    already = DeltaIndiaMarketDataProvider(
+        base_url="https://api.india.delta.exchange/v2"
+    )
+    assert already.base_url == "https://api.india.delta.exchange/v2"
+
+
 @pytest.mark.asyncio
 async def test_delta_live_candles_and_ticker() -> None:
     """Requires network — skip if Delta unreachable."""

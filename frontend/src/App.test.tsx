@@ -3,16 +3,17 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import App from "./App";
 
 vi.mock("./lib/api", () => ({
-  TIMEFRAMES: ["15m", "30m", "1h", "4h", "1d"],
+  TIMEFRAMES: ["1m", "5m", "15m", "30m", "1h", "4h", "1d"],
   fetchHealth: vi.fn().mockResolvedValue({
     status: "healthy",
     service: "Gold Swing AI",
-    phase: 11,
+    phase: "11.10.1",
     timestamp: "2026-08-08T00:00:00Z",
     symbol: "PAXGUSD",
     strategy_version: "1.0.0",
     model_version: "none",
   }),
+  listMlModels: vi.fn().mockResolvedValue({ count: 0, models: [] }),
   loadChartBars: vi.fn().mockResolvedValue({
     symbol: "PAXGUSD",
     timeframe: "1h",
@@ -153,6 +154,23 @@ vi.mock("./lib/api", () => ({
     count: 0,
     signals: [],
   }),
+  fetchCombinedAnalyze: vi.fn().mockResolvedValue({
+    symbol: "PAXGUSD",
+    as_of: "2024-01-01T00:00:00Z",
+    direction: "WAIT",
+    rule_signal: "WAIT",
+    rule_score: 58,
+    ml_prediction: "WAIT",
+    ml_confidence: 0.62,
+    ml_status: "LOW_CONFIDENCE",
+    probability_calibrated: false,
+    targets: [],
+    reasons: [],
+    risks: [],
+    rule_reasons: [],
+    ml_reasons: [],
+    notes: [],
+  }),
   fetchRiskAnalyze: vi.fn().mockResolvedValue({
     label: "RESEARCH ONLY — not live execution",
     trade_plan: {
@@ -195,6 +213,78 @@ vi.mock("./lib/api", () => ({
   }),
   putRiskConfig: vi.fn(),
   runRiskBacktest: vi.fn(),
+  fetchTradingSessions: vi.fn().mockResolvedValue({
+    timezone_display: "IST",
+    utc_offset_minutes: 330,
+    as_of: "2024-01-01T00:00:00Z",
+    active: ["asia"],
+    sessions: [
+      {
+        id: "asia",
+        name: "Asia",
+        ist_window: "5:30 AM – 2:30 PM",
+        utc_start_minute: 0,
+        utc_end_minute: 540,
+        utc_window: "00:00–09:00 UTC",
+        behavior: "Often range-bound / lower volatility",
+        color: "#3b82f6",
+        emoji: "🟦",
+        chart_fill: "rgba(59, 130, 246, 0.12)",
+        priority: 1,
+        window_mode: "fixed_utc",
+      },
+      {
+        id: "london",
+        name: "London",
+        ist_window: "1:30 PM – 10:30 PM",
+        utc_start_minute: 480,
+        utc_end_minute: 1020,
+        utc_window: "08:00–17:00 UTC",
+        behavior: "Volatility increases",
+        color: "#eab308",
+        emoji: "🟨",
+        chart_fill: "rgba(234, 179, 8, 0.12)",
+        priority: 2,
+        window_mode: "local",
+        timezone: "Europe/London",
+        local_start_minute: 480,
+        local_end_minute: 1020,
+      },
+      {
+        id: "new_york",
+        name: "New York",
+        ist_window: "6:30 PM – 3:30 AM",
+        utc_start_minute: 780,
+        utc_end_minute: 1320,
+        utc_window: "13:00–22:00 UTC",
+        behavior: "One of the highest-movement windows",
+        color: "#ef4444",
+        emoji: "🟥",
+        chart_fill: "rgba(239, 68, 68, 0.14)",
+        priority: 3,
+        window_mode: "local",
+        timezone: "America/New_York",
+        local_start_minute: 480,
+        local_end_minute: 1020,
+      },
+      {
+        id: "london_ny_overlap",
+        name: "London + NY Overlap",
+        ist_window: "6:30 PM – 10:30 PM",
+        utc_start_minute: 780,
+        utc_end_minute: 1020,
+        utc_window: "13:00–17:00 UTC",
+        behavior: "Most significant window (highest volatility)",
+        color: "#f97316",
+        emoji: "🔥",
+        chart_fill: "rgba(249, 115, 22, 0.22)",
+        priority: 4,
+        window_mode: "overlap",
+      },
+    ],
+    band_timeframes: ["15m", "30m", "1h"],
+    note: "Display/reference only",
+  }),
 }));
 
 vi.mock("./components/charts/CandlestickChart", () => ({
@@ -224,7 +314,7 @@ describe("DashboardShell Phase 11", () => {
     await waitFor(() => {
       expect(screen.getByTestId("candlestick-chart")).toBeInTheDocument();
     });
-    expect(screen.getByText(/11 ·/i)).toBeInTheDocument();
+    expect(screen.getByText(/11\.10\.1/i)).toBeInTheDocument();
     expect(await screen.findByTestId("mtf-panel")).toBeInTheDocument();
     expect(screen.getAllByText("PULLBACK").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("75%")).toBeInTheDocument();

@@ -1,6 +1,6 @@
-export type Timeframe = "15m" | "30m" | "1h" | "4h" | "1d";
+export type Timeframe = "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d";
 
-export const TIMEFRAMES: Timeframe[] = ["15m", "30m", "1h", "4h", "1d"];
+export const TIMEFRAMES: Timeframe[] = ["1m", "5m", "15m", "30m", "1h", "4h", "1d"];
 
 export type OHLCVBar = {
   timestamp: string;
@@ -30,7 +30,7 @@ export type IngestResponse = {
 export type HealthResponse = {
   status: string;
   service: string;
-  phase: number;
+  phase: number | string;
   timestamp: string;
   symbol: string;
   strategy_version: string;
@@ -125,6 +125,42 @@ export async function fetchMarketTicker(symbol?: string): Promise<{
   if (symbol) params.set("symbol", symbol);
   const q = params.toString();
   return apiGet(`/api/market/ticker${q ? `?${q}` : ""}`);
+}
+
+export type SessionDefinitionDto = {
+  id: string;
+  name: string;
+  ist_window: string;
+  utc_start_minute: number;
+  utc_end_minute: number;
+  utc_window: string;
+  behavior: string;
+  color: string;
+  emoji: string;
+  chart_fill: string;
+  priority: number;
+  window_mode?: string;
+  timezone?: string | null;
+  local_start_minute?: number | null;
+  local_end_minute?: number | null;
+};
+
+export type SessionsResponse = {
+  timezone_display: string;
+  utc_offset_minutes: number;
+  as_of: string;
+  active: string[];
+  sessions: SessionDefinitionDto[];
+  band_timeframes: string[];
+  note: string;
+};
+
+/** Session definitions + active-now (Phase 11.10 display/reference only). */
+export async function fetchTradingSessions(asOf?: string): Promise<SessionsResponse> {
+  const params = new URLSearchParams();
+  if (asOf) params.set("as_of", asOf);
+  const q = params.toString();
+  return apiGet<SessionsResponse>(`/api/market/sessions${q ? `?${q}` : ""}`);
 }
 
 export type TaAnalyzeResponse = {

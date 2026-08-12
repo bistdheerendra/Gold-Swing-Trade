@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 
 class Timeframe(str, Enum):
+    M1 = "1m"
+    M5 = "5m"
     M15 = "15m"
     M30 = "30m"
     H1 = "1h"
@@ -19,6 +21,8 @@ class Timeframe(str, Enum):
     @property
     def delta(self) -> timedelta:
         mapping = {
+            Timeframe.M1: timedelta(minutes=1),
+            Timeframe.M5: timedelta(minutes=5),
             Timeframe.M15: timedelta(minutes=15),
             Timeframe.M30: timedelta(minutes=30),
             Timeframe.H1: timedelta(hours=1),

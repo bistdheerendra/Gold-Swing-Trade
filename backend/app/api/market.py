@@ -10,9 +10,15 @@ from pydantic import BaseModel, Field
 
 from app.core.config import Settings, get_settings
 from app.core.errors import ValidationAppError
+from app.core.sessions import (
+    SESSION_BAND_TIMEFRAMES,
+    active_sessions_now,
+    session_definitions_payload,
+    sessions_for_timestamp,
+)
 from app.market.deps import get_market_service
 from app.market.real_provider import get_provider_health
-from app.market.schemas import OHLCVBar, OHLCVQuery, Timeframe, ValidationReport, parse_timeframe
+from app.market.schemas import OHLCVBar, OHLCVQuery, Timeframe, ValidationReport, ensure_utc, parse_timeframe
 from app.market.service import MarketDataService
 from app.market.symbols import SymbolListResponse, list_symbols, normalize_symbol
 
@@ -20,6 +26,8 @@ router = APIRouter(prefix="/market", tags=["market"])
 
 # Bars enough for MTF lookback + ML train/val/test windows
 _DEFAULT_BACKFILL_BARS: dict[str, int] = {
+    "1m": 5000,
+    "5m": 5000,
     "15m": 4000,
     "30m": 3000,
     "1h": 2000,
@@ -100,6 +108,51 @@ class MarketStatusResponse(BaseModel):
     last_error: Optional[str] = None
 
 
+class SessionDefinitionDto(BaseModel):
+    id: str
+    name: str
+    ist_window: str
+    utc_start_minute: int
+    utc_end_minute: int
+    utc_window: str
+    behavior: str
+    color: str
+    emoji: str
+    chart_fill: str
+    priority: int
+    window_mode: str = "fixed_utc"
+    timezone: Optional[str] = None
+    local_start_minute: Optional[int] = None
+    local_end_minute: Optional[int] = None
+
+
+class SessionsResponse(BaseModel):
+    """Trading-session reference for chart bands + dashboard panel (Phase 11.10.1).
+
+    Display/reference only — does not affect BUY/SELL/WAIT/NO_TRADE logic.
+    London/NY UTC windows are DST-aware for ``as_of``.
+    """
+
+    timezone_display: str = "IST"
+    utc_offset_minutes: int = 330
+    as_of: datetime
+    active: List[str]
+    sessions: List[SessionDefinitionDto]
+    band_timeframes: List[str] = Field(
+        default_factory=lambda: sorted(SESSION_BAND_TIMEFRAMES)
+    )
+    note: str = (
+        "Display/reference only — session tags do not feed strategy, "
+        "combined signal, or risk engines. London/NY windows are DST-aware "
+        "via zoneinfo for the as_of / candle date."
+    )
+
+
+class SessionTagResponse(BaseModel):
+    timestamp: datetime
+    sessions: List[str]
+
+
 @router.get("/symbols", response_model=SymbolListResponse)
 async def market_symbols(
     settings: Annotated[Settings, Depends(get_settings)],
@@ -130,6 +183,42 @@ async def market_status(
         allow_mock_data=settings.allow_mock_data,
         provider_ok=bool(health.get("ok", True)),
         last_error=health.get("last_error"),
+    )
+
+
+@router.get("/sessions", response_model=SessionsResponse)
+async def get_trading_sessions(
+    as_of: Optional[datetime] = Query(
+        default=None,
+        description="UTC instant for active-session check (default: now)",
+    ),
+) -> SessionsResponse:
+    """Session window definitions + currently active session(s).
+
+    Single source of truth for the dashboard reference table and chart bands.
+    Pure display — no OHLCV fetch, no strategy coupling.
+    """
+    instant = ensure_utc(as_of) if as_of is not None else datetime.now(timezone.utc)
+    active = [s.value for s in active_sessions_now(instant)]
+    defs = [
+        SessionDefinitionDto(**row) for row in session_definitions_payload(instant)
+    ]
+    return SessionsResponse(
+        as_of=instant,
+        active=active,
+        sessions=defs,
+    )
+
+
+@router.get("/sessions/tag", response_model=SessionTagResponse)
+async def tag_timestamp_sessions(
+    timestamp: datetime = Query(..., description="UTC candle/instant to tag"),
+) -> SessionTagResponse:
+    """Return all sessions containing a UTC timestamp (multi-label, incl. overlap)."""
+    ts = ensure_utc(timestamp)
+    return SessionTagResponse(
+        timestamp=ts,
+        sessions=[s.value for s in sessions_for_timestamp(ts)],
     )
 
 

@@ -1,0 +1,724 @@
+{
+  "model_id": "direction_logistic_800e3fbd",
+  "model_type": "logistic",
+  "model_version": "1.0.0",
+  "dataset_id": "122756d0-93ba-46f0-b7a1-e7fedd7a1bb3",
+  "dataset_version": "1.0.0",
+  "feature_version": "1.0.0",
+  "label_version": "1.0.0",
+  "feature_count": 77,
+  "target": "direction",
+  "task": "classification",
+  "status": "RESEARCH",
+  "random_seed": 50,
+  "feature_names": [
+    "body_size_pct",
+    "upper_wick_pct",
+    "lower_wick_pct",
+    "range_pct",
+    "close_position_in_range",
+    "bullish_candle",
+    "bearish_candle",
+    "ema20_distance_pct",
+    "ema20_slope",
+    "ema50_distance_pct",
+    "ema50_slope",
+    "ema100_distance_pct",
+    "ema100_slope",
+    "ema200_distance_pct",
+    "ema200_slope",
+    "ema20_vs_50",
+    "ema50_vs_100",
+    "ema100_vs_200",
+    "ema_alignment",
+    "rsi",
+    "rsi_distance_from_50",
+    "macd",
+    "macd_signal",
+    "macd_histogram",
+    "macd_histogram_slope",
+    "adx",
+    "atr",
+    "atr_pct",
+    "bb_position",
+    "bb_width",
+    "atr_percentile",
+    "structure_bias",
+    "last_bos_direction",
+    "last_bos_age",
+    "last_choch_direction",
+    "last_choch_age",
+    "bullish_fvg_present",
+    "bearish_fvg_present",
+    "nearest_bullish_fvg_distance_pct",
+    "nearest_bearish_fvg_distance_pct",
+    "bullish_ob_present",
+    "bearish_ob_present",
+    "nearest_bullish_ob_distance_pct",
+    "nearest_bearish_ob_distance_pct",
+    "demand_present",
+    "supply_present",
+    "buy_side_liquidity_distance_pct",
+    "sell_side_liquidity_distance_pct",
+    "liquidity_sweep_direction",
+    "liquidity_sweep_age",
+    "premium_discount_state",
+    "distance_from_equilibrium_pct",
+    "htf_1d_bias",
+    "htf_4h_bias",
+    "htf_1h_bias",
+    "htf_30m_bias",
+    "entry_15m_bias",
+    "mtf_alignment_score",
+    "higher_timeframe_bias",
+    "setup_bias",
+    "entry_bias",
+    "market_state_code",
+    "strategy_score",
+    "strategy_direction",
+    "strategy_state_code",
+    "cond_htf_alignment",
+    "cond_structure_confirmation",
+    "cond_liquidity_confirmation",
+    "cond_ob_confirmation",
+    "cond_fvg_confirmation",
+    "cond_entry_confirmation",
+    "rr_candidate",
+    "volatility_filter_state",
+    "hour_utc",
+    "day_of_week",
+    "day_of_month",
+    "month"
+  ],
+  "preprocessing_version": "1.0.0",
+  "hyperparameters": {
+    "random_seed": 50,
+    "class_weight": "balanced"
+  },
+  "class_counts_train": {
+    "counts": {
+      "UP": 22,
+      "NEUTRAL": 9,
+      "DOWN": 11
+    },
+    "percentages": {
+      "UP": 0.52381,
+      "NEUTRAL": 0.214286,
+      "DOWN": 0.261905
+    }
+  },
+  "candidates": [
+    {
+      "model_type": "logistic",
+      "selection_score": 0.444444,
+      "train_metrics": {
+        "accuracy": 0.952381,
+        "balanced_accuracy": 0.969697,
+        "precision_macro": 0.939394,
+        "recall_macro": 0.969697,
+        "f1_macro": 0.950794,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 11,
+            "NEUTRAL": 0,
+            "UP": 0
+          },
+          "NEUTRAL": {
+            "DOWN": 0,
+            "NEUTRAL": 9,
+            "UP": 0
+          },
+          "UP": {
+            "DOWN": 0,
+            "NEUTRAL": 2,
+            "UP": 20
+          }
+        },
+        "support": {
+          "UP": 22,
+          "NEUTRAL": 9,
+          "DOWN": 11
+        },
+        "n": 42
+      },
+      "validation_metrics": {
+        "accuracy": 0.666667,
+        "balanced_accuracy": 0.611111,
+        "precision_macro": 0.388889,
+        "recall_macro": 0.611111,
+        "f1_macro": 0.444444,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 5,
+            "NEUTRAL": 0,
+            "UP": 1
+          },
+          "NEUTRAL": {
+            "DOWN": 1,
+            "NEUTRAL": 0,
+            "UP": 1
+          },
+          "UP": {
+            "DOWN": 0,
+            "NEUTRAL": 0,
+            "UP": 1
+          }
+        },
+        "support": {
+          "NEUTRAL": 2,
+          "DOWN": 6,
+          "UP": 1
+        },
+        "n": 9
+      }
+    },
+    {
+      "model_type": "gradient_boosting",
+      "selection_score": 0.315152,
+      "train_metrics": {
+        "accuracy": 0.952381,
+        "balanced_accuracy": 0.947811,
+        "precision_macro": 0.947811,
+        "recall_macro": 0.947811,
+        "f1_macro": 0.947811,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 11,
+            "NEUTRAL": 0,
+            "UP": 0
+          },
+          "NEUTRAL": {
+            "DOWN": 0,
+            "NEUTRAL": 8,
+            "UP": 1
+          },
+          "UP": {
+            "DOWN": 0,
+            "NEUTRAL": 1,
+            "UP": 21
+          }
+        },
+        "support": {
+          "UP": 22,
+          "NEUTRAL": 9,
+          "DOWN": 11
+        },
+        "n": 42
+      },
+      "validation_metrics": {
+        "accuracy": 0.444444,
+        "balanced_accuracy": 0.5,
+        "precision_macro": 0.283333,
+        "recall_macro": 0.5,
+        "f1_macro": 0.315152,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 3,
+            "NEUTRAL": 0,
+            "UP": 3
+          },
+          "NEUTRAL": {
+            "DOWN": 2,
+            "NEUTRAL": 0,
+            "UP": 0
+          },
+          "UP": {
+            "DOWN": 0,
+            "NEUTRAL": 0,
+            "UP": 1
+          }
+        },
+        "support": {
+          "NEUTRAL": 2,
+          "DOWN": 6,
+          "UP": 1
+        },
+        "n": 9
+      }
+    },
+    {
+      "model_type": "random_forest",
+      "selection_score": 0.311111,
+      "train_metrics": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "precision_macro": 1.0,
+        "recall_macro": 1.0,
+        "f1_macro": 1.0,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 11,
+            "NEUTRAL": 0,
+            "UP": 0
+          },
+          "NEUTRAL": {
+            "DOWN": 0,
+            "NEUTRAL": 9,
+            "UP": 0
+          },
+          "UP": {
+            "DOWN": 0,
+            "NEUTRAL": 0,
+            "UP": 22
+          }
+        },
+        "support": {
+          "UP": 22,
+          "NEUTRAL": 9,
+          "DOWN": 11
+        },
+        "n": 42
+      },
+      "validation_metrics": {
+        "accuracy": 0.444444,
+        "balanced_accuracy": 0.5,
+        "precision_macro": 0.316667,
+        "recall_macro": 0.5,
+        "f1_macro": 0.311111,
+        "confusion_matrix": {
+          "DOWN": {
+            "DOWN": 3,
+            "NEUTRAL": 0,
+            "UP": 3
+          },
+          "NEUTRAL": {
+            "DOWN": 1,
+            "NEUTRAL": 0,
+            "UP": 1
+          },
+          "UP": {
+            "DOWN": 0,
+            "NEUTRAL": 0,
+            "UP": 1
+          }
+        },
+        "support": {
+          "NEUTRAL": 2,
+          "DOWN": 6,
+          "UP": 1
+        },
+        "n": 9
+      }
+    }
+  ],
+  "selected_model_type": "logistic",
+  "train_metrics": {
+    "accuracy": 0.952381,
+    "balanced_accuracy": 0.969697,
+    "precision_macro": 0.939394,
+    "recall_macro": 0.969697,
+    "f1_macro": 0.950794,
+    "confusion_matrix": {
+      "DOWN": {
+        "DOWN": 11,
+        "NEUTRAL": 0,
+        "UP": 0
+      },
+      "NEUTRAL": {
+        "DOWN": 0,
+        "NEUTRAL": 9,
+        "UP": 0
+      },
+      "UP": {
+        "DOWN": 0,
+        "NEUTRAL": 2,
+        "UP": 20
+      }
+    },
+    "support": {
+      "UP": 22,
+      "NEUTRAL": 9,
+      "DOWN": 11
+    },
+    "n": 42
+  },
+  "validation_metrics": {
+    "accuracy": 0.666667,
+    "balanced_accuracy": 0.611111,
+    "precision_macro": 0.388889,
+    "recall_macro": 0.611111,
+    "f1_macro": 0.444444,
+    "confusion_matrix": {
+      "DOWN": {
+        "DOWN": 5,
+        "NEUTRAL": 0,
+        "UP": 1
+      },
+      "NEUTRAL": {
+        "DOWN": 1,
+        "NEUTRAL": 0,
+        "UP": 1
+      },
+      "UP": {
+        "DOWN": 0,
+        "NEUTRAL": 0,
+        "UP": 1
+      }
+    },
+    "support": {
+      "NEUTRAL": 2,
+      "DOWN": 6,
+      "UP": 1
+    },
+    "n": 9
+  },
+  "test_metrics": {
+    "accuracy": 0.222222,
+    "balanced_accuracy": 0.5,
+    "precision_macro": 0.111111,
+    "recall_macro": 0.5,
+    "f1_macro": 0.181818,
+    "confusion_matrix": {
+      "NEUTRAL": {
+        "NEUTRAL": 0,
+        "UP": 7
+      },
+      "UP": {
+        "NEUTRAL": 0,
+        "UP": 2
+      }
+    },
+    "support": {
+      "NEUTRAL": 7,
+      "UP": 2
+    },
+    "n": 9
+  },
+  "trade_only_win_loss": {},
+  "baselines": {
+    "majority_validation": {
+      "accuracy": 0.111111,
+      "balanced_accuracy": 0.333333,
+      "precision_macro": 0.037037,
+      "recall_macro": 0.333333,
+      "f1_macro": 0.066667,
+      "confusion_matrix": {
+        "DOWN": {
+          "DOWN": 0,
+          "NEUTRAL": 0,
+          "UP": 6
+        },
+        "NEUTRAL": {
+          "DOWN": 0,
+          "NEUTRAL": 0,
+          "UP": 2
+        },
+        "UP": {
+          "DOWN": 0,
+          "NEUTRAL": 0,
+          "UP": 1
+        }
+      },
+      "support": {
+        "NEUTRAL": 2,
+        "DOWN": 6,
+        "UP": 1
+      },
+      "n": 9
+    },
+    "random_validation": {
+      "accuracy": 0.222222,
+      "balanced_accuracy": 0.388889,
+      "precision_macro": 0.380952,
+      "recall_macro": 0.388889,
+      "f1_macro": 0.178571,
+      "confusion_matrix": {
+        "DOWN": {
+          "DOWN": 1,
+          "NEUTRAL": 1,
+          "UP": 4
+        },
+        "NEUTRAL": {
+          "DOWN": 0,
+          "NEUTRAL": 0,
+          "UP": 2
+        },
+        "UP": {
+          "DOWN": 0,
+          "NEUTRAL": 0,
+          "UP": 1
+        }
+      },
+      "support": {
+        "NEUTRAL": 2,
+        "DOWN": 6,
+        "UP": 1
+      },
+      "n": 9
+    }
+  },
+  "calibration_validation": {
+    "buckets": [
+      {
+        "range": "0.50-0.60",
+        "count": 1,
+        "avg_pred": 0.5117,
+        "avg_true": 0.0
+      },
+      {
+        "range": "0.60-0.70",
+        "count": 1,
+        "avg_pred": 0.6771,
+        "avg_true": 0.0
+      },
+      {
+        "range": "0.90-1.00",
+        "count": 1,
+        "avg_pred": 0.9886,
+        "avg_true": 1.0
+      }
+    ],
+    "brier": 0.091024,
+    "log_loss": 0.266995,
+    "positive_class": "UP"
+  },
+  "feature_importance": [
+    {
+      "feature": "atr_percentile",
+      "importance": 0.444878
+    },
+    {
+      "feature": "nearest_bullish_ob_distance_pct",
+      "importance": 0.390337
+    },
+    {
+      "feature": "nearest_bearish_ob_distance_pct",
+      "importance": 0.384305
+    },
+    {
+      "feature": "last_bos_age",
+      "importance": 0.36746
+    },
+    {
+      "feature": "strategy_direction",
+      "importance": 0.322908
+    },
+    {
+      "feature": "strategy_state_code",
+      "importance": 0.322908
+    },
+    {
+      "feature": "body_size_pct",
+      "importance": 0.314696
+    },
+    {
+      "feature": "macd_histogram_slope",
+      "importance": 0.307515
+    },
+    {
+      "feature": "range_pct",
+      "importance": 0.286923
+    },
+    {
+      "feature": "atr",
+      "importance": 0.272489
+    },
+    {
+      "feature": "strategy_score",
+      "importance": 0.26365
+    },
+    {
+      "feature": "atr_pct",
+      "importance": 0.259643
+    },
+    {
+      "feature": "adx",
+      "importance": 0.253313
+    },
+    {
+      "feature": "buy_side_liquidity_distance_pct",
+      "importance": 0.241905
+    },
+    {
+      "feature": "bb_width",
+      "importance": 0.221864
+    },
+    {
+      "feature": "nearest_bullish_fvg_distance_pct",
+      "importance": 0.219685
+    },
+    {
+      "feature": "nearest_bearish_fvg_distance_pct",
+      "importance": 0.202713
+    },
+    {
+      "feature": "close_position_in_range",
+      "importance": 0.195524
+    },
+    {
+      "feature": "last_choch_age",
+      "importance": 0.194834
+    },
+    {
+      "feature": "macd",
+      "importance": 0.192665
+    }
+  ],
+  "explainability": {
+    "top_features": [
+      {
+        "feature": "atr_percentile",
+        "importance": 0.444878
+      },
+      {
+        "feature": "nearest_bullish_ob_distance_pct",
+        "importance": 0.390337
+      },
+      {
+        "feature": "nearest_bearish_ob_distance_pct",
+        "importance": 0.384305
+      },
+      {
+        "feature": "last_bos_age",
+        "importance": 0.36746
+      },
+      {
+        "feature": "strategy_direction",
+        "importance": 0.322908
+      },
+      {
+        "feature": "strategy_state_code",
+        "importance": 0.322908
+      },
+      {
+        "feature": "body_size_pct",
+        "importance": 0.314696
+      },
+      {
+        "feature": "macd_histogram_slope",
+        "importance": 0.307515
+      },
+      {
+        "feature": "range_pct",
+        "importance": 0.286923
+      },
+      {
+        "feature": "atr",
+        "importance": 0.272489
+      },
+      {
+        "feature": "strategy_score",
+        "importance": 0.26365
+      },
+      {
+        "feature": "atr_pct",
+        "importance": 0.259643
+      },
+      {
+        "feature": "adx",
+        "importance": 0.253313
+      },
+      {
+        "feature": "buy_side_liquidity_distance_pct",
+        "importance": 0.241905
+      },
+      {
+        "feature": "bb_width",
+        "importance": 0.221864
+      }
+    ],
+    "top_positive": [
+      {
+        "feature": "atr_percentile",
+        "coefficient": 0.667317
+      },
+      {
+        "feature": "nearest_bearish_ob_distance_pct",
+        "coefficient": 0.576458
+      },
+      {
+        "feature": "last_bos_age",
+        "coefficient": 0.551189
+      },
+      {
+        "feature": "body_size_pct",
+        "coefficient": 0.472044
+      },
+      {
+        "feature": "atr",
+        "coefficient": 0.408734
+      },
+      {
+        "feature": "atr_pct",
+        "coefficient": 0.389465
+      },
+      {
+        "feature": "range_pct",
+        "coefficient": 0.298647
+      },
+      {
+        "feature": "ema100_slope",
+        "coefficient": 0.261314
+      },
+      {
+        "feature": "rr_candidate",
+        "coefficient": 0.248086
+      },
+      {
+        "feature": "market_state_code",
+        "coefficient": 0.245918
+      }
+    ],
+    "top_negative": [
+      {
+        "feature": "buy_side_liquidity_distance_pct",
+        "coefficient": -0.362858
+      },
+      {
+        "feature": "bb_width",
+        "coefficient": -0.332797
+      },
+      {
+        "feature": "close_position_in_range",
+        "coefficient": -0.293286
+      },
+      {
+        "feature": "bb_position",
+        "coefficient": -0.253013
+      },
+      {
+        "feature": "macd_histogram_slope",
+        "coefficient": -0.238403
+      },
+      {
+        "feature": "nearest_bullish_ob_distance_pct",
+        "coefficient": -0.179431
+      },
+      {
+        "feature": "rsi",
+        "coefficient": -0.174779
+      },
+      {
+        "feature": "rsi_distance_from_50",
+        "coefficient": -0.174779
+      },
+      {
+        "feature": "upper_wick_pct",
+        "coefficient": -0.120399
+      },
+      {
+        "feature": "strategy_score",
+        "coefficient": -0.094855
+      }
+    ]
+  },
+  "filter_research": {},
+  "test_filter": {},
+  "selected_threshold_from_validation": 0.6,
+  "walk_forward_architecture": [],
+  "overfitting": "POSSIBLE_OVERFIT",
+  "scores": {
+    "train": 0.950794,
+    "validation": 0.444444,
+    "test": 0.181818
+  },
+  "trained_at": "2026-08-12T09:13:20.241707+00:00",
+  "artifact_dir": "artifacts\\ml\\direction\\direction_logistic_800e3fbd",
+  "notes": [
+    "RESEARCH ONLY \u2014 not production",
+    "Model selection used VALIDATION only",
+    "TEST evaluated once after selection",
+    "Thresholds scanned on VALIDATION only",
+    "No GridSearch / Optuna / deep learning"
+  ]
+}

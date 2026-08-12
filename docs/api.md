@@ -9,6 +9,19 @@
 | GET | `/` | `phase: "11"` |
 | GET | `/api/health` | `phase: 11` |
 
+## Market
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/market/status` | Provider / store health |
+| GET | `/api/market/ohlcv` | Query OHLCV bars |
+| GET | `/api/market/sessions` | Session defs + active now (Phase 11.10 display) |
+| GET | `/api/market/sessions/tag` | Tag one UTC timestamp with session(s) |
+| POST | `/api/market/ingest` | Historical ingest |
+| POST | `/api/market/backfill` | Multi-TF real backfill |
+| POST | `/api/market/seed` | Ensure sample / provider bars |
+| POST | `/api/market/refresh` | Force refresh latest candles |
+
 ## Risk (Phase 11 — RESEARCH)
 
 | Method | Path | Description |

@@ -26,15 +26,20 @@ import { TimeframeSelector } from "./TimeframeSelector";
 import { SymbolSelector } from "./SymbolSelector";
 import {
   fetchHealth,
+  fetchCombinedAnalyze,
   fetchMtfAnalyze,
   fetchSmcAnalyze,
   fetchStrategyAnalyze,
   fetchStrategyHistory,
   fetchTaAnalyze,
+  fetchTradingSessions,
+  listMlModels,
   loadChartBars,
+  type CombinedSignalResponse,
   type HealthResponse,
   type MtfAnalyzeResponse,
   type OHLCVBar,
+  type SessionDefinitionDto,
   type SmcAnalyzeResponse,
   type StrategyAnalyzeResponse,
   type StrategySignalDto,
@@ -43,11 +48,13 @@ import {
 } from "../lib/api";
 import { AiLoader } from "./AiLoader";
 import { MultiTimeframePanel } from "./MultiTimeframePanel";
+import { SessionReferencePanel } from "./SessionReferencePanel";
 import { SignalCard, SignalHistoryTable } from "./SignalCard";
 import { CombinedSignalPanel } from "./CombinedSignalPanel";
 import { RiskPanel } from "./RiskPanel";
 import { formatPrice } from "../lib/chartData";
 import { type EmaPeriod } from "../lib/ema";
+import { supportsSessionBands } from "../lib/sessions";
 import { DEFAULT_SYMBOL, symbolLabel, type TradeSymbol } from "../lib/symbols";
 import {
   DEFAULT_SMC_OVERLAYS,
@@ -106,8 +113,17 @@ export function DashboardShell({
   const [mtf, setMtf] = useState<MtfAnalyzeResponse | null>(null);
   const [strategy, setStrategy] = useState<StrategyAnalyzeResponse | null>(null);
   const [signalHistory, setSignalHistory] = useState<StrategySignalDto[]>([]);
+  const [combined, setCombined] = useState<CombinedSignalResponse | null>(null);
+  const [mlModelId, setMlModelId] = useState<string | undefined>(undefined);
   const [navOpen, setNavOpen] = useState(false);
+  const [showSessionBands, setShowSessionBands] = useState(true);
+  const [sessionDefs, setSessionDefs] = useState<SessionDefinitionDto[]>([]);
+  const [sessionActive, setSessionActive] = useState<string[]>([]);
+  const [sessionAsOf, setSessionAsOf] = useState<string | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
   const chartHeight = useResponsiveChartHeight();
+  const sessionBandsAvailable = supportsSessionBands(timeframe);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,6 +138,56 @@ export function DashboardShell({
         if (!cancelled) {
           setHealthError(err instanceof Error ? err.message : "API unreachable");
         }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Session definitions + active-now (refresh periodically; display only)
+  useEffect(() => {
+    let cancelled = false;
+    const loadSessions = () => {
+      fetchTradingSessions()
+        .then((data) => {
+          if (cancelled) return;
+          setSessionDefs(data.sessions);
+          setSessionActive(data.active);
+          setSessionAsOf(data.as_of);
+          setSessionError(null);
+          setSessionLoading(false);
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          setSessionError(
+            err instanceof Error ? err.message : "Failed to load sessions",
+          );
+          setSessionLoading(false);
+        });
+    };
+    loadSessions();
+    const id = window.setInterval(loadSessions, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, []);
+
+  // Prefer latest registered research model for combined/ML Prob (if any).
+  useEffect(() => {
+    let cancelled = false;
+    listMlModels()
+      .then((res) => {
+        if (cancelled) return;
+        const models = [...(res.models ?? [])].sort((a, b) => {
+          const ta = a.trained_at ? Date.parse(a.trained_at) : 0;
+          const tb = b.trained_at ? Date.parse(b.trained_at) : 0;
+          return tb - ta;
+        });
+        setMlModelId(models[0]?.model_id);
+      })
+      .catch(() => {
+        if (!cancelled) setMlModelId(undefined);
       });
     return () => {
       cancelled = true;
@@ -160,10 +226,15 @@ export function DashboardShell({
           fetchMtfAnalyze({ limit: 400, symbol }),
           fetchStrategyAnalyze({ limit: 400, symbol }),
           fetchStrategyHistory({ limit: 25, symbol }),
+          fetchCombinedAnalyze({
+            symbol,
+            mode: "ML_FILTER",
+            model_id: mlModelId,
+          }),
         ]);
         if (cancelled) return;
 
-        const [taRes, smcRes, mtfRes, strategyRes, histRes] = settled;
+        const [taRes, smcRes, mtfRes, strategyRes, histRes, combinedRes] = settled;
         setTa(taRes.status === "fulfilled" ? taRes.value : null);
         setSmc(smcRes.status === "fulfilled" ? smcRes.value : null);
         setMtf(mtfRes.status === "fulfilled" ? mtfRes.value : null);
@@ -171,6 +242,7 @@ export function DashboardShell({
         setSignalHistory(
           histRes.status === "fulfilled" ? histRes.value.signals : [],
         );
+        setCombined(combinedRes.status === "fulfilled" ? combinedRes.value : null);
 
         const overlayErrors = settled
           .slice(0, 4)
@@ -192,6 +264,7 @@ export function DashboardShell({
           setMtf(null);
           setStrategy(null);
           setSignalHistory([]);
+          setCombined(null);
           setChartError(
             err instanceof Error ? err.message : "Failed to load chart data",
           );
@@ -205,12 +278,20 @@ export function DashboardShell({
     return () => {
       cancelled = true;
     };
-  }, [timeframe, symbol]);
+  }, [timeframe, symbol, mlModelId]);
 
   const lastClose = useMemo(() => {
     const last = bars[bars.length - 1];
     return last?.close ?? null;
   }, [bars]);
+
+  const mlProbLabel = useMemo(() => {
+    if (combined?.ml_confidence != null) {
+      return `${(combined.ml_confidence * 100).toFixed(0)}%`;
+    }
+    if (combined) return "n/a";
+    return "—";
+  }, [combined]);
 
   const onEmaToggle = useCallback((period: EmaPeriod, visible: boolean) => {
     setEmaVisibility((prev) => ({ ...prev, [period]: visible }));
@@ -246,7 +327,17 @@ export function DashboardShell({
                 value={health ? "Online" : healthError ? "Offline" : "Checking"}
                 tone={health ? "bull" : healthError ? "bear" : "wait"}
               />
-              <StatusChip label="Phase" value="11 · Risk" tone="wait" />
+              <StatusChip
+                label="Phase"
+                value={
+                  health?.phase != null
+                    ? String(health.phase)
+                    : healthError
+                      ? "—"
+                      : "…"
+                }
+                tone="wait"
+              />
               <StatusChip label="Symbol" value={symbol} tone="gold" />
             </div>
             <StatusChip
@@ -292,7 +383,17 @@ export function DashboardShell({
                   tone={health ? "bull" : healthError ? "bear" : "wait"}
                   className="sm:hidden"
                 />
-                <StatusChip label="Phase" value="11 · Risk" tone="wait" />
+                <StatusChip
+                label="Phase"
+                value={
+                  health?.phase != null
+                    ? String(health.phase)
+                    : healthError
+                      ? "—"
+                      : "…"
+                }
+                tone="wait"
+              />
                 <StatusChip label="Symbol" value={symbol} tone="gold" />
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -322,7 +423,7 @@ export function DashboardShell({
         ) : null}
       </header>
 
-      <main className="mx-auto max-w-[1440px] space-y-4 px-3 py-4 sm:space-y-5 sm:px-4 sm:py-5 md:px-6">
+      <main className="mx-auto max-w-[1440px] space-y-5 px-3 py-5 sm:space-y-6 sm:px-5 sm:py-6 md:px-8">
         <Panel
           title="Price Chart"
           action={
@@ -334,6 +435,34 @@ export function DashboardShell({
                     ? `${bars[0].source}`
                     : "Loading…"}
               </span>
+              <button
+                type="button"
+                data-testid="session-bands-toggle"
+                disabled={!sessionBandsAvailable}
+                aria-pressed={showSessionBands && sessionBandsAvailable}
+                title={
+                  sessionBandsAvailable
+                    ? showSessionBands
+                      ? "Hide session bands"
+                      : "Show session bands"
+                    : "Session bands only on 15m / 30m / 1h"
+                }
+                onClick={() => {
+                  if (!sessionBandsAvailable) return;
+                  startTransition(() => {
+                    setShowSessionBands((prev) => !prev);
+                  });
+                }}
+                className={`rounded-md border px-2.5 py-1 text-[11px] uppercase tracking-wide transition ${
+                  !sessionBandsAvailable
+                    ? "cursor-not-allowed border-line/40 text-muted opacity-40"
+                    : showSessionBands
+                      ? "border-gold/50 bg-gold/15 text-gold"
+                      : "border-line/70 text-muted opacity-70 hover:border-line hover:opacity-100"
+                }`}
+              >
+                Sessions
+              </button>
               <TimeframeSelector
                 value={timeframe}
                 onChange={setTimeframe}
@@ -343,7 +472,7 @@ export function DashboardShell({
           }
         >
           <OhlcBanner readout={ohlc} fallbackClose={lastClose} />
-          <div className="relative overflow-hidden rounded-xl border border-line/60 bg-ink">
+          <div className="relative overflow-hidden rounded-2xl border border-line/50 bg-ink p-1 sm:p-2">
             {chartLoading ? (
               <div
                 className="grid place-items-center"
@@ -372,12 +501,15 @@ export function DashboardShell({
                 showEma={emaVisibility}
                 smc={smc}
                 smcVisibility={toggles}
+                sessionDefinitions={sessionDefs}
+                showSessionBands={showSessionBands}
+                timeframe={timeframe}
                 onCrosshairOhlc={setOhlc}
                 className="w-full"
               />
             )}
           </div>
-          <p className="mt-2 text-[11px] text-gold-muted">
+          <p className="mt-3 text-[11px] leading-relaxed text-gold-muted">
             Scroll to zoom · drag to pan · crosshair shows OHLC (IST). SMC overlays
             use confirmed events only (no look-ahead).
           </p>
@@ -398,7 +530,18 @@ export function DashboardShell({
             label="Strategy Score"
             value={strategy ? `${strategy.score}/100` : "—"}
           />
-          <MiniStat icon={<Waves className="h-4 w-4" />} label="ML Prob." value="—" />
+          <MiniStat
+            icon={<Waves className="h-4 w-4" />}
+            label="ML Prob."
+            value={mlProbLabel}
+            hint={
+              combined?.ml_status && combined.ml_confidence == null
+                ? combined.ml_status
+                : combined && !combined.probability_calibrated
+                  ? "research only"
+                  : undefined
+            }
+          />
         </div>
 
         {/* Equal columns — indicators + decisions sit centered, no empty mid gap */}
@@ -413,10 +556,20 @@ export function DashboardShell({
               />
               <MetricRow
                 label="Bias"
-                value={mtf?.higher_timeframe_bias ?? "WAIT"}
-                accent="wait"
+                value={mtf?.higher_timeframe_bias ?? "—"}
+                accent={mtf ? "wait" : undefined}
               />
               <MetricRow label="Timeframe" value={timeframe.toUpperCase()} />
+            </Panel>
+
+            <Panel title="Trading Sessions (IST)">
+              <SessionReferencePanel
+                sessions={sessionDefs}
+                active={sessionActive}
+                asOf={sessionAsOf}
+                loading={sessionLoading}
+                error={sessionError}
+              />
             </Panel>
 
             <Panel title="Multi-Timeframe Analysis">
@@ -542,7 +695,12 @@ export function DashboardShell({
             </Panel>
 
             <Panel title="Combined Signal (Rule + ML)">
-              <CombinedSignalPanel modelId={undefined} symbol={symbol} />
+              <CombinedSignalPanel
+                modelId={mlModelId}
+                symbol={symbol}
+                initialData={combined}
+                onDataChange={setCombined}
+              />
             </Panel>
 
             <Panel title="Explainability">
@@ -584,7 +742,7 @@ export function DashboardShell({
 
 function useResponsiveChartHeight(): number {
   const [height, setHeight] = useState(() =>
-    typeof window !== "undefined" ? chartHeightForWidth(window.innerWidth) : 420,
+    typeof window !== "undefined" ? chartHeightForWidth(window.innerWidth) : 620,
   );
 
   useEffect(() => {
@@ -598,9 +756,9 @@ function useResponsiveChartHeight(): number {
 }
 
 function chartHeightForWidth(width: number): number {
-  if (width < 640) return 280;
-  if (width < 1024) return 360;
-  return 420;
+  if (width < 640) return 360;
+  if (width < 1024) return 500;
+  return 620;
 }
 
 function Panel({
@@ -613,8 +771,8 @@ function Panel({
   action?: ReactNode;
 }) {
   return (
-    <section className="min-w-0 rounded-2xl border border-line/70 bg-panel/80 p-3 shadow-[inset_0_1px_0_rgba(240,215,140,0.06)] backdrop-blur-sm sm:p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+    <section className="min-w-0 rounded-2xl border border-line/70 bg-panel/80 p-4 shadow-[inset_0_1px_0_rgba(240,215,140,0.06)] backdrop-blur-sm sm:p-5 md:p-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-5 sm:gap-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-muted">
           {title}
         </h2>
@@ -661,10 +819,12 @@ function MiniStat({
   icon,
   label,
   value,
+  hint,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
+  hint?: string;
 }) {
   return (
     <div className="rounded-2xl border border-line/70 bg-panel/80 p-3 sm:p-4">
@@ -675,6 +835,11 @@ function MiniStat({
       <p className="break-words font-display text-xl text-gold-bright sm:text-2xl">
         {value}
       </p>
+      {hint ? (
+        <p className="mt-1 truncate text-[10px] uppercase tracking-wide text-gold-muted/80">
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }

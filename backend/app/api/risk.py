@@ -176,7 +176,16 @@ async def risk_analyze(
     broker = get_broker_adapter(
         account_balance=acct.account_balance, currency=acct.currency
     )
-    ticker = await broker.get_ticker(sym)
+    ticker: Dict[str, Any]
+    try:
+        ticker = await broker.get_ticker(sym)
+    except Exception as exc:  # noqa: BLE001 — research UI must not 500 on ticker outage
+        ticker = {
+            "bid": None,
+            "ask": None,
+            "spread_source": "UNKNOWN",
+            "note": f"ticker_unavailable: {exc}",
+        }
     daily = DailyRiskState(
         starting_daily_equity=acct.account_balance,
         realized_pnl=realized_pnl,
@@ -196,6 +205,8 @@ async def risk_analyze(
     plan.metadata["signal_id"] = signal.signal_id
     plan.metadata["combined_direction"] = signal.direction.value
     plan.notes.append(f"spread_source from ticker: {ticker.get('spread_source')}")
+    if ticker.get("note"):
+        plan.notes.append(str(ticker["note"]))
     return RiskAnalyzeResult(trade_plan=plan)
 
 

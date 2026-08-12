@@ -1,0 +1,221 @@
+{
+  "model_id": "return_10_gradient_boosting_f7a8c4a3",
+  "model_type": "gradient_boosting",
+  "model_version": "1.0.0",
+  "dataset_id": "ac91a623-6719-433e-98f8-5917f1a0b70b",
+  "dataset_version": "1.0.0",
+  "feature_version": "1.0.0",
+  "label_version": "1.0.0",
+  "feature_count": 77,
+  "target": "return_10",
+  "task": "regression",
+  "status": "RESEARCH",
+  "random_seed": 50,
+  "feature_names": [
+    "body_size_pct",
+    "upper_wick_pct",
+    "lower_wick_pct",
+    "range_pct",
+    "close_position_in_range",
+    "bullish_candle",
+    "bearish_candle",
+    "ema20_distance_pct",
+    "ema20_slope",
+    "ema50_distance_pct",
+    "ema50_slope",
+    "ema100_distance_pct",
+    "ema100_slope",
+    "ema200_distance_pct",
+    "ema200_slope",
+    "ema20_vs_50",
+    "ema50_vs_100",
+    "ema100_vs_200",
+    "ema_alignment",
+    "rsi",
+    "rsi_distance_from_50",
+    "macd",
+    "macd_signal",
+    "macd_histogram",
+    "macd_histogram_slope",
+    "adx",
+    "atr",
+    "atr_pct",
+    "bb_position",
+    "bb_width",
+    "atr_percentile",
+    "structure_bias",
+    "last_bos_direction",
+    "last_bos_age",
+    "last_choch_direction",
+    "last_choch_age",
+    "bullish_fvg_present",
+    "bearish_fvg_present",
+    "nearest_bullish_fvg_distance_pct",
+    "nearest_bearish_fvg_distance_pct",
+    "bullish_ob_present",
+    "bearish_ob_present",
+    "nearest_bullish_ob_distance_pct",
+    "nearest_bearish_ob_distance_pct",
+    "demand_present",
+    "supply_present",
+    "buy_side_liquidity_distance_pct",
+    "sell_side_liquidity_distance_pct",
+    "liquidity_sweep_direction",
+    "liquidity_sweep_age",
+    "premium_discount_state",
+    "distance_from_equilibrium_pct",
+    "htf_1d_bias",
+    "htf_4h_bias",
+    "htf_1h_bias",
+    "htf_30m_bias",
+    "entry_15m_bias",
+    "mtf_alignment_score",
+    "higher_timeframe_bias",
+    "setup_bias",
+    "entry_bias",
+    "market_state_code",
+    "strategy_score",
+    "strategy_direction",
+    "strategy_state_code",
+    "cond_htf_alignment",
+    "cond_structure_confirmation",
+    "cond_liquidity_confirmation",
+    "cond_ob_confirmation",
+    "cond_fvg_confirmation",
+    "cond_entry_confirmation",
+    "rr_candidate",
+    "volatility_filter_state",
+    "hour_utc",
+    "day_of_week",
+    "day_of_month",
+    "month"
+  ],
+  "preprocessing_version": "1.0.0",
+  "hyperparameters": {
+    "random_seed": 50,
+    "class_weight": "balanced",
+    "max_iter": 100
+  },
+  "class_counts_train": {},
+  "candidates": [
+    {
+      "model_type": "gradient_boosting",
+      "selection_score": -0.00249821,
+      "train_metrics": {
+        "mae": 0.00108026,
+        "rmse": 0.00147064,
+        "r2": 0.893502,
+        "directional_accuracy": 0.967742,
+        "n": 62
+      },
+      "validation_metrics": {
+        "mae": 0.00249821,
+        "rmse": 0.00297756,
+        "r2": -0.176259,
+        "directional_accuracy": 0.571429,
+        "n": 14
+      }
+    },
+    {
+      "model_type": "logistic",
+      "selection_score": -0.00338224,
+      "train_metrics": {
+        "mae": 0.00082665,
+        "rmse": 0.00106474,
+        "r2": 0.944177,
+        "directional_accuracy": 0.967742,
+        "n": 62
+      },
+      "validation_metrics": {
+        "mae": 0.00338224,
+        "rmse": 0.00396146,
+        "r2": -1.082058,
+        "directional_accuracy": 0.785714,
+        "n": 14
+      }
+    },
+    {
+      "model_type": "random_forest",
+      "selection_score": -0.00368238,
+      "train_metrics": {
+        "mae": 0.00073587,
+        "rmse": 0.00098377,
+        "r2": 0.952345,
+        "directional_accuracy": 0.951613,
+        "n": 62
+      },
+      "validation_metrics": {
+        "mae": 0.00368238,
+        "rmse": 0.00447668,
+        "r2": -1.658844,
+        "directional_accuracy": 0.428571,
+        "n": 14
+      }
+    }
+  ],
+  "selected_model_type": "gradient_boosting",
+  "train_metrics": {
+    "mae": 0.00108026,
+    "rmse": 0.00147064,
+    "r2": 0.893502,
+    "directional_accuracy": 0.967742,
+    "n": 62
+  },
+  "validation_metrics": {
+    "mae": 0.00249821,
+    "rmse": 0.00297756,
+    "r2": -0.176259,
+    "directional_accuracy": 0.571429,
+    "n": 14
+  },
+  "test_metrics": {
+    "mae": 0.00222868,
+    "rmse": 0.00256176,
+    "r2": -1.002636,
+    "directional_accuracy": 0.857143,
+    "n": 14
+  },
+  "trade_only_win_loss": {},
+  "baselines": {},
+  "calibration_validation": {},
+  "feature_importance": [],
+  "explainability": {
+    "top_features": []
+  },
+  "filter_research": {},
+  "test_filter": {},
+  "selected_threshold_from_validation": 0.6,
+  "walk_forward_architecture": [
+    {
+      "fold_id": 2,
+      "train_start": 0,
+      "train_end": 56,
+      "validation_start": 56,
+      "validation_end": 66,
+      "description": "Fold 2: Train[0:56) \u2192 Validation[56:66)"
+    },
+    {
+      "fold_id": 3,
+      "train_start": 0,
+      "train_end": 66,
+      "validation_start": 66,
+      "validation_end": 76,
+      "description": "Fold 3: Train[0:66) \u2192 Validation[66:76)"
+    }
+  ],
+  "overfitting": null,
+  "scores": {
+    "train": -0.00108026,
+    "validation": -0.00249821,
+    "test": -0.00222868
+  },
+  "trained_at": "2026-08-12T09:12:30.666255+00:00",
+  "artifact_dir": "artifacts\\ml\\return_10\\return_10_gradient_boosting_f7a8c4a3",
+  "notes": [
+    "RESEARCH ONLY \u2014 not production",
+    "Model selection used VALIDATION only",
+    "TEST evaluated once after selection",
+    "Thresholds scanned on VALIDATION only",
+    "No GridSearch / Optuna / deep learning"
+  ]
+}

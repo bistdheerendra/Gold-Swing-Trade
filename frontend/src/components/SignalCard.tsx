@@ -43,6 +43,12 @@ export function SignalCard({
   const tp1 = data.targets[0];
   const tp2 = data.targets[1];
   const title = symbolLabel ?? data.symbol ?? "XAUUSD";
+  const levelsAreCandidates =
+    data.signal === "NO_TRADE" || data.signal === "WAIT";
+  const hasAnyLevel =
+    data.entry != null ||
+    data.stop_loss != null ||
+    (data.targets?.length ?? 0) > 0;
 
   return (
     <div className="space-y-4">
@@ -68,6 +74,17 @@ export function SignalCard({
       </div>
 
       <div className="space-y-2 text-sm">
+        {levelsAreCandidates && hasAnyLevel ? (
+          <p className="text-[10px] uppercase tracking-wider text-gold-muted">
+            Candidate levels · not an active trade
+          </p>
+        ) : null}
+        {levelsAreCandidates && !hasAnyLevel ? (
+          <p className="text-[11px] text-muted">
+            No entry/SL/TP yet — levels need a valid zone + RR. Unmet conditions
+            (e.g. liquidity sweep) often block a complete plan.
+          </p>
+        ) : null}
         <Row label="Entry" value={entryLabel} />
         <Row
           label="SL"

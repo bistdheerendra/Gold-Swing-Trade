@@ -16,7 +16,7 @@ async def health() -> dict:
     return {
         "status": "healthy",
         "service": settings.app_name,
-        "phase": 11.5,
+        "phase": "11.10.1",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "symbol": settings.market_symbol,
         "supported_symbols": ["XAUUSD", "PAXGUSD"],

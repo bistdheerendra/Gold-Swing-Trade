@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   compareRuleVsMl,
   fetchCombinedAnalyze,
@@ -17,14 +17,22 @@ function tone(signal: string): string {
 export function CombinedSignalPanel({
   modelId,
   symbol,
+  initialData = null,
+  onDataChange,
 }: {
   modelId?: string;
   symbol?: string;
+  initialData?: CombinedSignalResponse | null;
+  onDataChange?: (data: CombinedSignalResponse | null) => void;
 }) {
-  const [data, setData] = useState<CombinedSignalResponse | null>(null);
+  const [data, setData] = useState<CombinedSignalResponse | null>(initialData);
   const [compare, setCompare] = useState<CombinedCompareResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
 
   const load = async () => {
     setLoading(true);
@@ -36,6 +44,7 @@ export function CombinedSignalPanel({
         symbol,
       });
       setData(res);
+      onDataChange?.(res);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed");
     } finally {
@@ -110,6 +119,24 @@ export function CombinedSignalPanel({
               value={
                 data.ml_confidence != null
                   ? `${(data.ml_confidence * 100).toFixed(0)}%`
+                  : "—"
+              }
+            />
+            <Stat
+              label="Combined score"
+              value={
+                data.combined_score != null
+                  ? `${(data.combined_score * 100).toFixed(0)}`
+                  : "—"
+              }
+            />
+            <Stat
+              label="ML model"
+              value={
+                data.ml_model_id
+                  ? `${data.ml_model_id}${
+                      data.ml_model_version ? ` · ${data.ml_model_version}` : ""
+                    }`
                   : "—"
               }
             />

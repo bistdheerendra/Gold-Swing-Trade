@@ -159,6 +159,153 @@ def test_poor_rr_validation() -> None:
     assert any("RR" in e or "minimum" in e.lower() or "wrong side" in e.lower() for e in errs)
 
 
+def test_buy_sl_stays_below_entry_when_price_ran_above_fvg() -> None:
+    """Path B regression: last close above FVG must not place SL above entry.preferred."""
+    from app.smc.schemas import FvgEvent, FvgLifecycle, SmcEventType
+
+    cfg = StrategyConfig(min_rr=1.5, sl_buffer=0.5)
+    fvg = FvgEvent(
+        id="fvg1",
+        type=SmcEventType.BULLISH_FVG,
+        direction=SmcDirection.BULLISH,
+        timeframe="15m",
+        created_index=10,
+        confirm_index=11,
+        high=4376.1,
+        low=4368.91,
+        price=4372.505,
+        size=4376.1 - 4368.91,
+        lifecycle=FvgLifecycle.ACTIVE,
+        filled=False,
+        valid=True,
+    )
+    # Misleading "swing low" between FVG and current price — old bug picked this vs price
+    swing_between = SmcEvent(
+        id="sl_bad",
+        type=SmcEventType.SWING_LOW,
+        direction=SmcDirection.BULLISH,
+        timeframe="1h",
+        created_index=12,
+        confirm_index=14,
+        price=4391.0,
+    )
+    smc = SmcAnalysisResult(
+        symbol="PAXGUSD",
+        timeframe="1h",
+        bar_count=20,
+        as_of_index=19,
+        config=SmcConfig(),
+        structure=SmcStructureSummary(
+            bias=SmcDirection.BULLISH,
+            last_swing_low=swing_between,
+            last_swing_high=SmcEvent(
+                id="sh",
+                type=SmcEventType.SWING_HIGH,
+                direction=SmcDirection.BEARISH,
+                timeframe="1h",
+                created_index=15,
+                confirm_index=17,
+                price=4410.0,
+            ),
+        ),
+        fvg=[fvg],
+        dealing_range=DealingRange(
+            range_high=4410.0,
+            range_low=4360.0,
+            equilibrium=4385.0,
+            current_price=4400.0,
+            zone=DealingZone.PREMIUM,
+        ),
+    )
+    # Price has already run above the FVG entry zone
+    levels = compute_levels(
+        bullish=True,
+        bars_15m=[_bar(4400.0)],
+        smc_1h=smc,
+        smc_15m=smc,
+        atr=8.0,
+        config=cfg,
+    )
+    assert levels.entry is not None
+    assert levels.stop_loss is not None
+    assert levels.entry.preferred < 4380  # still the FVG zone
+    assert levels.stop_loss < levels.entry.preferred
+    assert levels.stop_loss < levels.entry.low
+    errs = validate_trade_levels(
+        bullish=True,
+        entry=levels.entry,
+        stop_loss=levels.stop_loss,
+        targets=levels.targets,
+        config=cfg,
+    )
+    assert not any("wrong side" in e.lower() or "must be below" in e.lower() for e in errs)
+
+
+def test_sell_sl_stays_above_entry_when_price_ran_below_zone() -> None:
+    cfg = StrategyConfig(min_rr=1.5, sl_buffer=0.5)
+    zone = ZoneEvent(
+        id="sup1",
+        type=SmcEventType.SUPPLY_ZONE,
+        direction=SmcDirection.BEARISH,
+        timeframe="1h",
+        created_index=8,
+        confirm_index=11,
+        high=2010.0,
+        low=2005.0,
+        origin_index=8,
+    )
+    swing_between = SmcEvent(
+        id="sh_bad",
+        type=SmcEventType.SWING_HIGH,
+        direction=SmcDirection.BEARISH,
+        timeframe="1h",
+        created_index=12,
+        confirm_index=14,
+        price=1995.0,  # between zone and fallen price
+    )
+    smc = SmcAnalysisResult(
+        symbol="XAUUSD",
+        timeframe="1h",
+        bar_count=20,
+        as_of_index=19,
+        config=SmcConfig(),
+        structure=SmcStructureSummary(
+            bias=SmcDirection.BEARISH,
+            last_swing_high=swing_between,
+            last_swing_low=SmcEvent(
+                id="sl",
+                type=SmcEventType.SWING_LOW,
+                direction=SmcDirection.BULLISH,
+                timeframe="1h",
+                created_index=15,
+                confirm_index=17,
+                price=1980.0,
+            ),
+        ),
+        supply_zones=[zone],
+        order_blocks=[zone],
+        dealing_range=DealingRange(
+            range_high=2015.0,
+            range_low=1975.0,
+            equilibrium=1995.0,
+            current_price=1988.0,
+            zone=DealingZone.DISCOUNT,
+        ),
+    )
+    levels = compute_levels(
+        bullish=False,
+        bars_15m=[_bar(1988.0)],
+        smc_1h=smc,
+        smc_15m=None,
+        atr=5.0,
+        config=cfg,
+    )
+    assert levels.entry is not None
+    assert levels.stop_loss is not None
+    assert levels.stop_loss > levels.entry.preferred
+    assert levels.stop_loss > levels.entry.high
+
+
 def test_missing_levels_no_trade() -> None:
     cfg = StrategyConfig()
     errs = validate_trade_levels(

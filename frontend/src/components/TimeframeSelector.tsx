@@ -14,7 +14,7 @@ export function TimeframeSelector({
 }: TimeframeSelectorProps) {
   return (
     <div
-      className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       role="tablist"
       aria-label="Chart timeframe"
     >
@@ -28,9 +28,9 @@ export function TimeframeSelector({
             aria-selected={active}
             disabled={disabled}
             onClick={() => onChange(tf)}
-            className={`shrink-0 rounded-md px-2 py-1 text-xs uppercase tracking-wide transition sm:px-2.5 ${
+            className={`shrink-0 rounded-lg px-2.5 py-1.5 text-xs uppercase tracking-wide transition sm:px-3 ${
               active
-                ? "bg-gold/20 text-gold-bright"
+                ? "bg-gold/20 text-gold-bright ring-1 ring-gold/40"
                 : "text-muted hover:bg-panel-elevated hover:text-cream"
             } disabled:cursor-not-allowed disabled:opacity-50`}
           >
