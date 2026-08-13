@@ -63,15 +63,33 @@ def resolve_binance_model_id(explicit: Optional[str] = None) -> str:
     return mid
 
 
+def _resolve_local_artifact_dir(stored: Optional[str], discovered: Path) -> Path:
+    """Prefer a usable artifact folder on this machine.
+
+    registry_entry.json often stores an absolute path from the training host.
+    That path 500s on another PC (WinError 5) if we mkdir/load it as-is.
+    """
+    candidates: List[Path] = []
+    if stored:
+        p = Path(stored)
+        if not p.is_absolute():
+            p = REPO_ROOT / p
+        candidates.append(p)
+    candidates.append(discovered)
+    for art in candidates:
+        if art.exists() and (art / "model.joblib").exists():
+            return art
+    return discovered
+
+
 def _load_meta(model_id: str) -> Dict[str, Any]:
     root = _artifacts_root()
     for path in root.rglob("registry_entry.json"):
         meta = json.loads(path.read_text(encoding="utf-8"))
         if meta.get("model_id") == model_id:
-            art = Path(meta.get("artifact_dir") or path.parent)
-            if not art.is_absolute():
-                art = REPO_ROOT / art
-            meta["artifact_dir"] = str(art)
+            meta["artifact_dir"] = str(
+                _resolve_local_artifact_dir(meta.get("artifact_dir"), path.parent)
+            )
             return meta
     for path in root.rglob("metrics.json"):
         if path.parent.name == model_id:
