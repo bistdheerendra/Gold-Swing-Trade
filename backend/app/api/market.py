@@ -60,7 +60,7 @@ class IngestResponse(BaseModel):
 
 
 class BackfillRequest(BaseModel):
-    symbols: List[str] = Field(default_factory=lambda: ["PAXGUSD", "XAUUSD"])
+    symbols: List[str] = Field(default_factory=lambda: ["PAXGUSD", "SLVONUSD"])
     timeframes: List[str] = Field(
         default_factory=lambda: ["15m", "30m", "1h", "4h", "1d"]
     )
@@ -157,7 +157,7 @@ class SessionTagResponse(BaseModel):
 async def market_symbols(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> SymbolListResponse:
-    """List research tradeable symbols (XAUUSD, PAXGUSD, …)."""
+    """List research tradeable symbols (PAXGUSD, SLVONUSD, …)."""
     return SymbolListResponse(
         default_symbol=normalize_symbol(settings.market_symbol),
         symbols=list_symbols(),

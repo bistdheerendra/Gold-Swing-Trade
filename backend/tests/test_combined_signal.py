@@ -232,8 +232,8 @@ def test_combined_api_and_history(client: TestClient) -> None:
     assert resp.status_code == 200, resp.text
     hist = client.get("/api/combined/history").json()
     assert hist["count"] >= 1
-    assert client.get("/api/health").json()["phase"] == 11.5
-    assert client.get("/").json()["phase"] == "11.5"
+    assert client.get("/api/health").json()["phase"] == "11.12"
+    assert client.get("/").json()["phase"] == "11.12"
 
 
 def test_backtest_modes(client: TestClient, tmp_path: Path) -> None:

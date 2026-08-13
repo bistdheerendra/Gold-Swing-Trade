@@ -391,6 +391,9 @@ export async function fetchStrategyHistory(options?: {
 
 export type BinanceSuggestionResponse = {
   enabled?: boolean;
+  live?: boolean;
+  bars_source?: string;
+  live_warning?: string | null;
   as_of?: string;
   symbol?: string;
   source?: string;
@@ -409,6 +412,7 @@ export type BinanceSuggestionResponse = {
   primary_rr?: number | null;
   atr?: number | null;
   level_errors?: string[];
+  level_warnings?: string[];
   train_span_months?: number;
   train_span_label?: string;
   train_from?: string;
@@ -420,13 +424,15 @@ export type BinanceSuggestionResponse = {
   generated_at?: string;
 };
 
-/** Research sidecar — Binance PAXGUSDT ML suggestion (not Delta GO). */
+/** Research sidecar — live Binance PAXGUSDT ML suggestion (not Delta GO). */
 export async function fetchBinanceSuggestion(options?: {
   modelId?: string;
   limit?: number;
+  live?: boolean;
 }): Promise<BinanceSuggestionResponse> {
   const params = new URLSearchParams({
     limit: String(options?.limit ?? 400),
+    live: String(options?.live ?? true),
   });
   if (options?.modelId) params.set("model_id", options.modelId);
   return apiGet<BinanceSuggestionResponse>(

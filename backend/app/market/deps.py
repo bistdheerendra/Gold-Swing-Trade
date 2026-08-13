@@ -39,6 +39,7 @@ def get_provider() -> MarketDataProvider:
             provider=backend,  # type: ignore[arg-type]
             delta_base_url=_delta_base_url(settings),
             delta_paxgusd_symbol=settings.delta_paxgusd_symbol,
+            delta_slvonusd_symbol=settings.delta_slvonusd_symbol,
             twelvedata_base_url=settings.twelvedata_api_base_url,
             twelvedata_api_key=settings.twelvedata_api_key,
         )

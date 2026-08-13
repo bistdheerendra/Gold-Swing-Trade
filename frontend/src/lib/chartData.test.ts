@@ -13,7 +13,7 @@ import type { OHLCVBar } from "./api";
 function bar(i: number, close: number): OHLCVBar {
   return {
     timestamp: new Date(Date.UTC(2024, 0, 1, i)).toISOString(),
-    symbol: "XAUUSD",
+    symbol: "PAXGUSD",
     timeframe: "1h",
     open: close - 0.5,
     high: close + 1,

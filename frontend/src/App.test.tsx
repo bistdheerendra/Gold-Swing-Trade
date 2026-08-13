@@ -7,7 +7,7 @@ vi.mock("./lib/api", () => ({
   fetchHealth: vi.fn().mockResolvedValue({
     status: "healthy",
     service: "Gold Swing AI",
-    phase: "11.10.1",
+    phase: "11.12",
     timestamp: "2026-08-08T00:00:00Z",
     symbol: "PAXGUSD",
     strategy_version: "1.0.0",
@@ -310,11 +310,11 @@ describe("DashboardShell Phase 11", () => {
     expect(screen.getByText("Gold Swing AI")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "1h" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "PAXGUSD" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "XAUUSD" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "SLVONUSD" })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByTestId("candlestick-chart")).toBeInTheDocument();
     });
-    expect(screen.getByText(/11\.10\.1/i)).toBeInTheDocument();
+    expect(screen.getByText(/11\.12/i)).toBeInTheDocument();
     expect(await screen.findByTestId("mtf-panel")).toBeInTheDocument();
     expect(screen.getAllByText("PULLBACK").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("75%")).toBeInTheDocument();

@@ -22,7 +22,7 @@ def test_root_endpoint(client: TestClient) -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert data["phase"] == "11.5"
+    assert data["phase"] == "11.12"
     assert "Gold" in data["name"] or data["name"]
 
 
@@ -31,7 +31,7 @@ def test_health_endpoint(client: TestClient) -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["phase"] == 11.5
+    assert data["phase"] == "11.12"
     assert data["symbol"] == "PAXGUSD"
     assert "timestamp" in data
 

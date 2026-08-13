@@ -64,9 +64,9 @@ def test_strategy_invalid_timeframe(client: TestClient) -> None:
 def test_health_phase_11(client: TestClient) -> None:
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json()["phase"] == 11.5
+    assert response.json()["phase"] == "11.12"
 
 
 def test_root_phase_11(client: TestClient) -> None:
     response = client.get("/")
-    assert response.json()["phase"] == "11.5"
+    assert response.json()["phase"] == "11.12"

@@ -161,7 +161,7 @@ export function RiskPanel({ symbol }: { symbol?: TradeSymbol }) {
   return (
     <div className="space-y-4" data-testid="risk-panel">
       <p className="text-[11px] text-gold-muted">
-        PAXGUSD risk calculator — sizes Phase 10 signals only. Never invents
+        {sym} risk calculator — sizes Phase 10 signals only. Never invents
         BUY/SELL. Research only. Protection limits are saved to risk config
         before each recalculate.
       </p>
@@ -423,7 +423,7 @@ export function RiskManagementPage({ onBack }: { onBack: () => void }) {
               Risk Management
             </h1>
             <p className="text-sm text-muted">
-              PAXGUSD instrument-aware sizing · no live orders
+              Instrument-aware sizing (PAXGUSD / SLVONUSD) · no live orders
             </p>
           </div>
           <button
@@ -438,7 +438,7 @@ export function RiskManagementPage({ onBack }: { onBack: () => void }) {
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
           <section className="min-w-0 rounded-2xl border border-line/70 bg-panel/80 p-3 sm:p-4">
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gold-muted">
-              PAXGUSD Risk Calculator
+              Risk Calculator
             </h2>
             <RiskPanel symbol={DEFAULT_SYMBOL} />
           </section>

@@ -1,4 +1,4 @@
-"""Real free-tier market data — Delta India (PAXGUSD) + Twelve Data (XAUUSD ref).
+"""Real free-tier market data — Delta India (PAXGUSD, SLVONUSD) + Twelve Data (XAUUSD ref).
 
 No silent fallback to mock data. API failures raise loudly.
 """
@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Literal, Optional, Sequence
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set
 
 import httpx
 
@@ -24,11 +24,13 @@ ProviderBackend = Literal["delta_india", "twelvedata"]
 DELTA_INDIA_BASE = "https://api.india.delta.exchange"
 TWELVEDATA_BASE = "https://api.twelvedata.com"
 
-# Verified 2026-08-09 via GET /v2/products — PAXGUSD perpetual is live
+# Verified via GET /v2/products — live perpetuals on Delta India
 DEFAULT_DELTA_PAXGUSD_SYMBOL = "PAXGUSD"
+DEFAULT_DELTA_SLVONUSD_SYMBOL = "SLVONUSD"
 
 DEFAULT_DELTA_SYMBOL_MAP: Dict[str, str] = {
     "PAXGUSD": DEFAULT_DELTA_PAXGUSD_SYMBOL,
+    "SLVONUSD": DEFAULT_DELTA_SLVONUSD_SYMBOL,
 }
 
 DEFAULT_TWELVEDATA_SYMBOL_MAP: Dict[str, str] = {
@@ -60,6 +62,8 @@ _TWELVE_MAX_OUTPUT = 5000
 
 _last_provider_error: Optional[str] = None
 _last_provider_ok: bool = True
+_verified_delta_symbols: Dict[str, str] = {}
+# Backward-compat alias used by older health consumers
 _verified_delta_symbol: Optional[str] = None
 
 
@@ -67,7 +71,9 @@ def get_provider_health() -> dict[str, Any]:
     return {
         "ok": _last_provider_ok,
         "last_error": _last_provider_error,
-        "verified_delta_paxgusd_symbol": _verified_delta_symbol,
+        "verified_delta_paxgusd_symbol": _verified_delta_symbols.get("PAXGUSD")
+        or _verified_delta_symbol,
+        "verified_delta_symbols": dict(_verified_delta_symbols),
     }
 
 
@@ -126,14 +132,14 @@ async def _request_with_backoff(
     raise RuntimeError(f"Request failed after {max_retries} retries: {url}")
 
 
-async def verify_delta_paxgusd_symbol(
+async def verify_delta_symbol(
     *,
     base_url: str = DELTA_INDIA_BASE,
     expected: str = DEFAULT_DELTA_PAXGUSD_SYMBOL,
     timeout_seconds: float = 30.0,
 ) -> str:
     """
-    Confirm PAXGUSD (or configured symbol) exists on Delta India /v2/products.
+    Confirm a Delta India product exists via GET /v2/products.
     Returns the exact listed symbol string. Raises if not found / not live.
     """
     global _verified_delta_symbol
@@ -168,14 +174,16 @@ async def verify_delta_paxgusd_symbol(
                 raise RuntimeError(
                     f"Delta product {sym} found but state={state!r} (expected live)"
                 )
-            _verified_delta_symbol = str(product.get("symbol"))
+            listed = str(product.get("symbol"))
+            _verified_delta_symbols[want] = listed
+            _verified_delta_symbol = listed
             logger.info(
                 "delta_symbol_verified symbol=%s state=%s contract_type=%s",
-                _verified_delta_symbol,
+                listed,
                 product.get("state"),
                 product.get("contract_type"),
             )
-            return _verified_delta_symbol
+            return listed
 
     raise RuntimeError(
         f"Delta India /v2/products has no product symbol={want}. "
@@ -183,14 +191,26 @@ async def verify_delta_paxgusd_symbol(
     )
 
 
+async def verify_delta_paxgusd_symbol(
+    *,
+    base_url: str = DELTA_INDIA_BASE,
+    expected: str = DEFAULT_DELTA_PAXGUSD_SYMBOL,
+    timeout_seconds: float = 30.0,
+) -> str:
+    """Backward-compatible alias for verify_delta_symbol (PAXGUSD default)."""
+    return await verify_delta_symbol(
+        base_url=base_url, expected=expected, timeout_seconds=timeout_seconds
+    )
+
+
 class RealMarketDataProvider(MarketDataProvider):
     """
     Free-tier real OHLCV provider.
 
-    - provider=\"delta_india\": authoritative PAXGUSD candles (no API key)
+    - provider=\"delta_india\": authoritative PAXGUSD + SLVONUSD candles (no API key)
     - provider=\"twelvedata\": XAU/USD reference feed (free API key)
 
-    Never falls back to mock or Binance proxies.
+    Never falls back to mock or Binance proxies. Series are never blended across symbols.
     """
 
     def __init__(
@@ -199,6 +219,8 @@ class RealMarketDataProvider(MarketDataProvider):
         *,
         delta_base_url: str = DELTA_INDIA_BASE,
         delta_paxgusd_symbol: str = DEFAULT_DELTA_PAXGUSD_SYMBOL,
+        delta_slvonusd_symbol: str = DEFAULT_DELTA_SLVONUSD_SYMBOL,
+        delta_symbol_map: Optional[Dict[str, str]] = None,
         twelvedata_base_url: str = TWELVEDATA_BASE,
         twelvedata_api_key: str = "",
         twelvedata_symbol_map: Optional[Dict[str, str]] = None,
@@ -220,6 +242,12 @@ class RealMarketDataProvider(MarketDataProvider):
         self.delta_paxgusd_symbol = delta_paxgusd_symbol.strip().upper() or (
             DEFAULT_DELTA_PAXGUSD_SYMBOL
         )
+        self.delta_slvonusd_symbol = delta_slvonusd_symbol.strip().upper() or (
+            DEFAULT_DELTA_SLVONUSD_SYMBOL
+        )
+        self.delta_symbol_map = dict(delta_symbol_map or DEFAULT_DELTA_SYMBOL_MAP)
+        self.delta_symbol_map["PAXGUSD"] = self.delta_paxgusd_symbol
+        self.delta_symbol_map["SLVONUSD"] = self.delta_slvonusd_symbol
         self.twelvedata_base_url = twelvedata_base_url.rstrip("/")
         self.twelvedata_api_key = (twelvedata_api_key or "").strip()
         self.twelvedata_symbol_map = twelvedata_symbol_map or dict(
@@ -230,7 +258,7 @@ class RealMarketDataProvider(MarketDataProvider):
         self.validate_responses = validate_responses
         self._validator = OHLCVValidator()
         self._last_request_at = 0.0
-        self._product_verified = False
+        self._verified_app_symbols: Set[str] = set()
 
         if self.backend == "twelvedata" and not self.twelvedata_api_key:
             raise ValueError(
@@ -241,10 +269,10 @@ class RealMarketDataProvider(MarketDataProvider):
     def map_symbol(self, symbol: str) -> str:
         key = symbol.strip().upper()
         if self.backend == "delta_india":
-            if key == "PAXGUSD":
-                return self.delta_paxgusd_symbol
+            if key in self.delta_symbol_map:
+                return self.delta_symbol_map[key]
             raise ValueError(
-                f"delta_india provider is authoritative for PAXGUSD only "
+                f"delta_india provider supports {', '.join(sorted(self.delta_symbol_map))} "
                 f"(got '{symbol}'). Use MARKET_DATA_PROVIDER=twelvedata for XAUUSD reference."
             )
         if key not in self.twelvedata_symbol_map:
@@ -254,21 +282,27 @@ class RealMarketDataProvider(MarketDataProvider):
             )
         return self.twelvedata_symbol_map[key]
 
-    async def ensure_delta_symbol_verified(self) -> str:
-        if self._product_verified and _verified_delta_symbol:
-            return _verified_delta_symbol
-        listed = await verify_delta_paxgusd_symbol(
+    async def ensure_delta_symbol_verified(self, symbol: str = "PAXGUSD") -> str:
+        """Verify one Delta product; caches per app symbol."""
+        app_symbol = symbol.strip().upper()
+        expected = self.map_symbol(app_symbol)
+        if app_symbol in self._verified_app_symbols and expected in _verified_delta_symbols:
+            return _verified_delta_symbols[expected]
+        listed = await verify_delta_symbol(
             base_url=self.delta_base_url,
-            expected=self.delta_paxgusd_symbol,
+            expected=expected,
             timeout_seconds=self.timeout,
         )
-        if listed.upper() != self.delta_paxgusd_symbol.upper():
+        if listed.upper() != expected.upper():
             raise RuntimeError(
-                f"Configured DELTA_PAXGUSD_SYMBOL={self.delta_paxgusd_symbol} "
-                f"does not match listed symbol={listed}"
+                f"Configured Delta symbol={expected} does not match listed symbol={listed}"
             )
-        self.delta_paxgusd_symbol = listed
-        self._product_verified = True
+        self.delta_symbol_map[app_symbol] = listed
+        if app_symbol == "PAXGUSD":
+            self.delta_paxgusd_symbol = listed
+        elif app_symbol == "SLVONUSD":
+            self.delta_slvonusd_symbol = listed
+        self._verified_app_symbols.add(app_symbol)
         return listed
 
     async def get_historical_ohlcv(
@@ -287,7 +321,7 @@ class RealMarketDataProvider(MarketDataProvider):
         app_symbol = symbol.strip().upper()
         try:
             if self.backend == "delta_india":
-                await self.ensure_delta_symbol_verified()
+                await self.ensure_delta_symbol_verified(app_symbol)
                 bars = await self._fetch_delta(app_symbol, tf, start_utc, end_utc)
             else:
                 bars = await self._fetch_twelvedata(app_symbol, tf, start_utc, end_utc)
@@ -446,8 +480,8 @@ class RealMarketDataProvider(MarketDataProvider):
         """Read-only live ticker from Delta (no auth)."""
         if self.backend != "delta_india":
             raise RuntimeError("Ticker is only available for delta_india provider")
-        await self.ensure_delta_symbol_verified()
         app_symbol = symbol.strip().upper()
+        await self.ensure_delta_symbol_verified(app_symbol)
         delta_symbol = self.map_symbol(app_symbol)
         url = f"{self._delta_api_root()}/tickers/{delta_symbol}"
         async with httpx.AsyncClient(timeout=self.timeout) as client:

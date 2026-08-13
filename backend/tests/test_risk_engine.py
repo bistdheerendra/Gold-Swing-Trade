@@ -336,8 +336,8 @@ def test_api_backtest_risk_percent(client: TestClient) -> None:
 
 
 def test_health_phase_11(client: TestClient) -> None:
-    assert client.get("/api/health").json()["phase"] == 11.5
-    assert client.get("/").json()["phase"] == "11.5"
+    assert client.get("/api/health").json()["phase"] == "11.12"
+    assert client.get("/").json()["phase"] == "11.12"
 
 
 def test_no_place_order_on_broker() -> None:

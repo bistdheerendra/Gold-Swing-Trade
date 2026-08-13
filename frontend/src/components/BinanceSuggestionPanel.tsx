@@ -28,7 +28,7 @@ export function BinanceSuggestionPanel({
     onLoadingChange?.(true);
     setError(null);
     try {
-      const res = await fetchBinanceSuggestion();
+      const res = await fetchBinanceSuggestion({ live: true });
       setData(res);
       setSuggestedAt(new Date().toISOString());
     } catch (err: unknown) {
@@ -88,12 +88,32 @@ export function BinanceSuggestionPanel({
         <span className="text-[10px] uppercase tracking-wider text-white/55">
           Futures · PAXGUSDT · research only
         </span>
+        {data?.live ? (
+          <span
+            className="rounded-md border border-binance-green/50 bg-binance-green/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-binance-green"
+            data-testid="binance-live-badge"
+            title={data.bars_source ?? "binance_futures_live"}
+          >
+            Live
+          </span>
+        ) : data && data.enabled !== false ? (
+          <span
+            className="rounded-md border border-white/25 bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/60"
+            data-testid="binance-csv-badge"
+            title={data.live_warning ?? data.bars_source ?? "csv"}
+          >
+            CSV
+          </span>
+        ) : null}
       </div>
 
       <p className="text-[11px] leading-relaxed text-white/55">
-        Binance-trained reference. Separate from Delta PAXGUSD strategy — not
-        Phase 12 GO. Levels use Binance SMC/ATR geometry for the ML lean.
+        Live Binance futures bars + trained model lean. Separate from Delta
+        PAXGUSD strategy — not Phase 12 GO. Levels use Binance SMC/ATR geometry.
       </p>
+      {data?.live_warning ? (
+        <p className="text-[11px] text-binance-red/90">{data.live_warning}</p>
+      ) : null}
 
       {loading && !data ? (
         <p className="text-sm text-white/60">Loading Binance suggestion…</p>
@@ -207,6 +227,11 @@ export function BinanceSuggestionPanel({
                   {data.level_errors?.[0]}
                 </p>
               ) : null}
+              {(data.level_warnings?.length ?? 0) > 0 ? (
+                <p className="pt-1 text-[11px] text-binance/90">
+                  {data.level_warnings?.[0]}
+                </p>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-1.5 text-sm">
@@ -225,6 +250,11 @@ export function BinanceSuggestionPanel({
                   {data.level_errors?.[0]}
                 </p>
               ) : null}
+              {(data.level_warnings?.length ?? 0) > 0 ? (
+                <p className="pt-1 text-[11px] text-binance/90">
+                  {data.level_warnings?.[0]}
+                </p>
+              ) : null}
             </div>
           )}
 
@@ -236,7 +266,9 @@ export function BinanceSuggestionPanel({
               </dd>
             </div>
             <div>
-              <dt className="uppercase tracking-wider">Market as of</dt>
+              <dt className="uppercase tracking-wider">
+                Market as of{data.live ? " · live" : ""}
+              </dt>
               <dd className="truncate font-medium text-white">
                 {data.as_of ? formatSuggestTime(data.as_of) : "—"}
               </dd>

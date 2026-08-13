@@ -54,7 +54,7 @@ export function SignalCard({
       : "—";
   const tp1 = data.targets[0];
   const tp2 = data.targets[1];
-  const title = symbolLabel ?? data.symbol ?? "XAUUSD";
+  const title = symbolLabel ?? data.symbol ?? "PAXGUSD";
   const levelsAreCandidates =
     data.signal === "NO_TRADE" || data.signal === "WAIT";
   const hasAnyLevel =

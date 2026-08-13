@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
-Phase 11.5 — one-time / repeatable real OHLCV historical backfill.
+Phase 11.5 / 11.12 — one-time / repeatable real OHLCV historical backfill.
 
-Pulls free-tier candles for PAXGUSD + XAUUSD across 15m/1h/4h/1d,
+Pulls free-tier candles for PAXGUSD + SLVONUSD across 15m/30m/1h/4h/1d,
 validates via OHLCVValidator, upserts into the configured repository
 (prefer MARKET_DATA_STORE=postgres), and also writes CSV snapshots under
 data/historical/ for durable ML re-runs.
 
+Series are stored separately per symbol — never merge PAXGUSD and SLVONUSD.
+
 Usage (from backend/):
   python scripts/backfill_market_data.py
-  python scripts/backfill_market_data.py --symbols PAXGUSD --timeframes 1h,1d
+  python scripts/backfill_market_data.py --symbols SLVONUSD --timeframes 15m,30m,1h,4h,1d
 """
 
 from __future__ import annotations
@@ -148,7 +150,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Real market data historical backfill")
     parser.add_argument(
         "--symbols",
-        default="PAXGUSD,XAUUSD",
+        default="PAXGUSD,SLVONUSD",
         help="Comma-separated symbols",
     )
     parser.add_argument(

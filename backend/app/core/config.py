@@ -73,6 +73,10 @@ class Settings(BaseSettings):
         default="PAXGUSD",
         alias="DELTA_PAXGUSD_SYMBOL",
     )
+    delta_slvonusd_symbol: str = Field(
+        default="SLVONUSD",
+        alias="DELTA_SLVONUSD_SYMBOL",
+    )
     # Legacy alias kept for older .env files
     delta_api_base_url: str = Field(
         default="https://api.india.delta.exchange/v2",

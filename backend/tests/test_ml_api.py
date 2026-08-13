@@ -55,5 +55,5 @@ def test_ml_dataset_build(client: TestClient) -> None:
 
 
 def test_health_phase_11(client: TestClient) -> None:
-    assert client.get("/api/health").json()["phase"] == 11.5
-    assert client.get("/").json()["phase"] == "11.5"
+    assert client.get("/api/health").json()["phase"] == "11.12"
+    assert client.get("/").json()["phase"] == "11.12"

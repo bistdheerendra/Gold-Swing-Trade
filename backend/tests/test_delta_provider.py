@@ -15,9 +15,11 @@ from app.market.schemas import Timeframe
 async def test_delta_symbol_map() -> None:
     p = DeltaIndiaMarketDataProvider()
     assert p.map_symbol("PAXGUSD") == "PAXGUSD"
-    assert p.map_symbol("xauusd") == "PAXGUSD"
+    assert p.map_symbol("slvonusd") == "SLVONUSD"
     with pytest.raises(ValueError):
         p.map_symbol("BTCUSD")
+    with pytest.raises(ValueError):
+        p.map_symbol("XAUUSD")
 
 
 def test_delta_base_url_normalizes_v2() -> None:

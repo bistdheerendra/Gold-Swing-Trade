@@ -16,10 +16,11 @@ def test_twelvedata_requires_api_key() -> None:
         RealMarketDataProvider(provider="twelvedata", twelvedata_api_key="")
 
 
-def test_delta_symbol_map_paxgusd_only() -> None:
+def test_delta_symbol_map_supports_paxg_and_silver() -> None:
     p = RealMarketDataProvider(provider="delta_india", delta_paxgusd_symbol="PAXGUSD")
     assert p.map_symbol("PAXGUSD") == "PAXGUSD"
-    with pytest.raises(ValueError, match="PAXGUSD only"):
+    assert p.map_symbol("SLVONUSD") == "SLVONUSD"
+    with pytest.raises(ValueError, match="PAXGUSD|SLVONUSD"):
         p.map_symbol("XAUUSD")
 
 

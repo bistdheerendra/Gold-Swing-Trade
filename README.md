@@ -1,13 +1,13 @@
 # Gold Swing AI
 
-Production-oriented **decision-support** platform for **PAXGUSD** (and XAUUSD research) swing analysis.
+Production-oriented **decision-support** platform for **PAXGUSD** and **SLVONUSD** (Delta Exchange India) swing analysis.
 
 > This system analyzes markets, scores setups, and can recommend BUY / SELL / **WAIT** / **NO TRADE**.
 > It does **not** execute real-money trades in early phases.
 
 ## Current status
 
-**Phase 11.5 complete · Real market data:** Delta Exchange India public candles for **PAXGUSD** (default, no API key; symbol verified via `/v2/products`). Optional Twelve Data for XAU/USD reference. Timeframes include **30m**. Mock only with `ALLOW_MOCK_DATA=true` for pytest.
+**Phase 11.12 complete · Dual Delta instruments:** public candles for **PAXGUSD** and **SLVONUSD** (independent research tracks; no API key; symbols verified via `/v2/products`). UI tabs `PAXGUSD | SLVONUSD` with gold/silver themes. PAXGUSD Phase 12 remains **NO-GO**; SLVONUSD starts its own gate unevaluated. Mock only with `ALLOW_MOCK_DATA=true` for pytest.
 
 > This system analyzes markets, scores setups, and can recommend BUY / SELL / **WAIT** / **NO TRADE**.
 > It does **not** execute real-money trades. Market data is read-only (no API keys / no orders).

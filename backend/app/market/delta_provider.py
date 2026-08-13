@@ -16,8 +16,7 @@ DELTA_INDIA_BASE = "https://api.india.delta.exchange/v2"
 # App symbol → Delta product symbol (public candles; no auth)
 _SYMBOL_MAP: Dict[str, str] = {
     "PAXGUSD": "PAXGUSD",
-    # Spot-style research alias: use PAX Gold perpetual as live gold proxy
-    "XAUUSD": "PAXGUSD",
+    "SLVONUSD": "SLVONUSD",
 }
 
 _RESOLUTION: Dict[Timeframe, str] = {

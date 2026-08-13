@@ -3,29 +3,29 @@
 **Location:** `Desktop/Gold Trader`  
 **Product name:** Gold Swing AI  
 **Folder name:** Gold Trader  
-**Current phase:** **11.11 — Post-Fix Backtest Re-Run (complete; NO-GO stands)**  
-**Next phase:** **Blocked** — Phase 12 still NO-GO; monitor per [docs/monitoring-checklist.md](docs/monitoring-checklist.md)  
-**Last updated:** 2026-08-12
+**Current phase:** **11.12 — SLVONUSD Instrument + Silver Theme (complete)**  
+**Next phase:** **Blocked** — Phase 12 still NO-GO for **PAXGUSD**; **SLVONUSD** starts its own Phase 12 gate from scratch (not yet evaluated). Monitor PAXGUSD per [docs/monitoring-checklist.md](docs/monitoring-checklist.md)  
+**Last updated:** 2026-08-13
 
 ---
 
 ## 1. Project overview
 
-Gold Swing AI is a **production-oriented decision-support / quantitative research platform** for **PAXGUSD** (Delta Exchange India research) and XAUUSD swing analysis.
+Gold Swing AI is a **production-oriented decision-support / quantitative research platform** for **PAXGUSD** and **SLVONUSD** (both Delta Exchange India live perpetuals).
 
-It analyzes market data, detects technical + Smart Money Concepts (SMC) structure, scores multi-timeframe bias, generates **BUY / SELL / WAIT / NO TRADE** signals (rule + optional ML filter), and sizes risk via a PAXGUSD-aware risk engine.
+It analyzes market data, detects technical + Smart Money Concepts (SMC) structure, scores multi-timeframe bias, generates **BUY / SELL / WAIT / NO TRADE** signals (rule + optional ML filter), and sizes risk via an instrument-aware risk engine.
 
 ### What it is
 - Market analysis and decision-support system
-- Research platform for swing setups on PAXGUSD / XAUUSD
-- Desktop-first gold-themed trading terminal UI
+- Research platform for swing setups on **PAXGUSD** and **SLVONUSD** (independent tracks — never blended)
+- Desktop-first terminal UI with gold / silver instrument themes
 
 ### What it is NOT (yet)
 - Automatic real-money trade execution
 - A broker bot
 - A guaranteed profit system
 
-> Real broker execution is only considered after backtesting, paper trading, and validation (Phase 12–13+).
+> Real broker execution is only considered after backtesting, paper trading, and validation (Phase 12–13+). Each instrument is gated on its own evidence.
 
 ---
 
@@ -81,7 +81,8 @@ Market Data (real free-tier)  ← Phase 11.5
   → Liquidity Sweep Investigation← Phase 11.9 (inconclusive; no rule change)
   → Trading Session Overlay      ← Phase 11.10 (UI/reference only)
   → Post-Fix Backtest Re-Run     ← Phase 11.11 (NO-GO stands)
-  → Paper Trading + Alerts       ← Phase 12 (blocked)
+  → SLVONUSD + Silver Theme      ← Phase 11.12
+  → Paper Trading + Alerts       ← Phase 12 (blocked for PAXGUSD; SLVONUSD unevaluated)
   → Production Hardening
 ```
 
@@ -106,7 +107,7 @@ Gold Trader/
 │       ├── smc/              # BOS/CHoCH/FVG/OB/liquidity/dealing range
 │       ├── mtf/              # sync, bias engine, MultiTimeframeAnalyzer
 │       ├── strategy/         # rule-based signal engine
-│       ├── risk/             # PAXGUSD instrument + RiskEngine
+│       ├── risk/             # Instrument registry (PAXGUSD, SLVONUSD) + RiskEngine
 │       ├── ml/               # dataset, train, combined filter
 │       └── models/           # SQLAlchemy OHLCV model
 ├── backend/scripts/          # backfill_market_data, validate_phase_11_5
@@ -147,7 +148,8 @@ Gold Trader/
 | 11.10 | Trading Session Overlay | **COMPLETE** |
 | 11.10.1 | DST-Aware Session Windows | **COMPLETE** |
 | 11.11 | Post-Fix Backtest Re-Run (SL geometry) | **COMPLETE — NO-GO stands** |
-| 12 | Paper Trading + Live Monitoring + Alerts | **BLOCKED** |
+| 11.12 | SLVONUSD Instrument + Silver Theme | **COMPLETE** |
+| 12 | Paper Trading + Live Monitoring + Alerts | **BLOCKED** (PAXGUSD NO-GO; SLVONUSD not yet gated) |
 | 13 | Production Hardening & Deployment | Pending |
 
 See [docs/roadmap.md](docs/roadmap.md) for full phase descriptions.
@@ -284,6 +286,16 @@ See [docs/roadmap.md](docs/roadmap.md) for full phase descriptions.
 - Docs: [docs/phase-11.11-post-fix-backtest.md](docs/phase-11.11-post-fix-backtest.md)
 - Script: `backend/scripts/phase_11_11_post_fix_backtest.py`
 
+### Phase 11.12 — SLVONUSD Instrument + Silver Theme
+- Verified **SLVONUSD** live perpetual on Delta India `GET /v2/products` (contract_value `0.1`, tick `0.01`, funding 8h, position limit 62 000)
+- `RealMarketDataProvider` (delta_india) supports **PAXGUSD + SLVONUSD** as separate series
+- Instrument registry + risk sizing use SLVONUSD’s own spec (not PAXGUSD’s)
+- Historical backfill writes `data/historical/SLVONUSD_{tf}.csv` — never merged with PAXGUSD
+- UI symbol tabs: `PAXGUSD | SLVONUSD` (XAUUSD tab removed)
+- Token-level **silver** theme when SLVONUSD is selected — see [docs/theming.md](docs/theming.md)
+- Engines remain symbol-parameterized; each instrument is an **independent research track** with its own Phase 12 gate (SLVONUSD not yet evaluated; PAXGUSD NO-GO is not inherited)
+- Docs: [docs/market-data.md](docs/market-data.md), [docs/theming.md](docs/theming.md)
+
 ---
 
 ## 8. API reference (current)
@@ -327,13 +339,14 @@ See `.env.example`. Important keys:
 
 | Variable | Meaning |
 |----------|---------|
-| `MARKET_SYMBOL` | Default `PAXGUSD` / research `XAUUSD` |
+| `MARKET_SYMBOL` | Default `PAXGUSD` (or `SLVONUSD`) |
 | `DEFAULT_TIMEFRAME` | Default `1h` |
 | `MARKET_DATA_PROVIDER` | `delta_india` (default) \| `twelvedata` \| `mock` |
 | `ALLOW_MOCK_DATA` | `false` — must be `true` for pytest mock only |
 | `DELTA_INDIA_BASE_URL` | `https://api.india.delta.exchange` |
 | `DELTA_PAXGUSD_SYMBOL` | Verified via `/v2/products` (default `PAXGUSD`) |
-| `TWELVEDATA_API_KEY` | Free key from twelvedata.com (XAUUSD reference only) |
+| `DELTA_SLVONUSD_SYMBOL` | Verified via `/v2/products` (default `SLVONUSD`) |
+| `TWELVEDATA_API_KEY` | Free key from twelvedata.com (legacy XAUUSD reference only) |
 | `MARKET_DATA_STORE` | `memory` or `postgres` (prefer postgres for ML) |
 | `RISK_PERCENT` / `MIN_RR` | Risk params |
 | `STRATEGY_VERSION` / `MODEL_VERSION` | Version tracking |
@@ -465,6 +478,8 @@ Gold-themed trading terminal with:
 | [docs/combined-signal-engine.md](docs/combined-signal-engine.md) | Rule + ML filter |
 | [docs/risk-management.md](docs/risk-management.md) | Risk engine |
 | [docs/paxgusd-instrument.md](docs/paxgusd-instrument.md) | PAXGUSD instrument spec |
+| [docs/slvonusd-instrument.md](docs/slvonusd-instrument.md) | SLVONUSD instrument spec |
+| [docs/theming.md](docs/theming.md) | Gold / silver instrument theme tokens |
 | [docs/position-sizing.md](docs/position-sizing.md) | Position sizing |
 | [docs/api.md](docs/api.md) | API summary |
 
@@ -472,28 +487,36 @@ Gold-themed trading terminal with:
 
 ## 14. Known limitations (current)
 
-1. **XAUUSD reference feed (Twelve Data), if used, is a different source than PAXGUSD (Delta India) — do not blend them**  
-2. **Delta India public API rate limits** may throttle backfill speed  
-3. Default persistence is **in-memory** unless Postgres is configured — prefer postgres for durable ML datasets  
-4. Docker may not be installed on all machines — compose files are ready  
-5. Demand/Supply zones currently map from Order Blocks (documented)  
-6. Strategy scores are research heuristics, not proven expectancy  
-7. ML confidence is **not** a guaranteed win probability  
-8. Signal history is in-memory (cleared on API restart)  
-9. No paper/live execution yet (Phase 12 blocked by Phase 11.6 NO-GO)  
-10. No broker order placement or real-money paths  
-11. **Phase 11.6 — real PAXGUSD rule strategy is not Phase-12-ready:** expanded max-history ALL backtest is only weakly positive (~+0.07R pre-recal, ~+0.01R after a rejected vol-penalty tweak, n≈34–40); held-out TEST is **−0.39R on n=6**. Delta history starts ~2026-02-19 — sample remains thin. Default `StrategyConfig` thresholds unchanged; candidate `config_real_recal.json` is audit-only.  
-12. Phase 11.5 “0 trades” on Phase 10 TEST was largely a **measurement bug** (warmup applied after slicing a short TEST window); fixed in 11.6 via full-series context + `chronological_eval_bounds`. After the fix, TEST produces trades but still loses on average.  
-13. **Phase 11.7 — insufficient evidence for a Phase 6 structural rewrite:** win rate (~33–38%) and payoff (TEST PF ~0.55) both look weak, and blockers *suggest* location/MTF/RR friction, but n is too small to localize a safe structural change. Forcing confluence edits now would be overfitting with a bigger blast radius than threshold tweaks. Prefer more history (and/or separate XAUUSD reference study) before reopening rule surgery.  
-14. **Phase 11.8 — candle-level ML is research-only:** full-history triple-barrier dataset (~16 294 rows) replaces the thin ~34 trade-outcome sample for *ML research*, but held-out directional skill is weak (~2.7pp over majority). Artifacts live in `data/ml_datasets_candle/` and `artifacts/ml_candle/`. **Not** wired into Phase 6/10. UI `bar_limit=220` remains preview-only.  
-15. **Phase 11.9 — liquidity sweep investigation inconclusive:** on TRAIN+VAL, sweep is unmet on ~78% of high-score no-trade samples (15-pt score gap) but sole unmet only ~6%. 1H reclaim sweeps are sparse (avg ~138 bars between unique events; ~23% of samples have any sweep in 40 bars). Widening `recent_sweep_bars` did nothing; 1H→15m fallback added trades but worsened VAL expectancy. **No production rule change.** Live `✗ Liquidity Sweep` on NO_TRADE/INVALIDATED cards is often a listed unmet condition, not a hard `liquidity_required` veto.
-16. **Phase 11.11 — SL geometry fix does not clear Phase 12:** controlled re-run on the same Phase 11.6 window shows ALL expectancy ~unchanged (+0.07R) with more trades and worse max DD; TEST flips positive on n=9 only. Keep the Path B SL fix; do **not** treat that as a GO.
+1. **PAXGUSD and SLVONUSD are independent Delta series — never blend candles, signals, or backtest stats**  
+2. **Legacy XAUUSD (Twelve Data), if used, is a different source — do not blend with Delta**  
+3. **Delta India public API rate limits** may throttle backfill speed  
+4. Default persistence is **in-memory** unless Postgres is configured — prefer postgres for durable ML datasets  
+5. Docker may not be installed on all machines — compose files are ready  
+6. Demand/Supply zones currently map from Order Blocks (documented)  
+7. Strategy scores are research heuristics, not proven expectancy  
+8. ML confidence is **not** a guaranteed win probability  
+9. Signal history is in-memory (cleared on API restart)  
+10. No paper/live execution yet (Phase 12 blocked by Phase 11.6 NO-GO for PAXGUSD; SLVONUSD not yet gated)  
+11. No broker order placement or real-money paths  
+12. **Phase 11.6 — real PAXGUSD rule strategy is not Phase-12-ready:** expanded max-history ALL backtest is only weakly positive (~+0.07R pre-recal, ~+0.01R after a rejected vol-penalty tweak, n≈34–40); held-out TEST is **−0.39R on n=6**. Delta history starts ~2026-02-19 — sample remains thin. Default `StrategyConfig` thresholds unchanged; candidate `config_real_recal.json` is audit-only.  
+13. Phase 11.5 “0 trades” on Phase 10 TEST was largely a **measurement bug** (warmup applied after slicing a short TEST window); fixed in 11.6 via full-series context + `chronological_eval_bounds`. After the fix, TEST produces trades but still loses on average.  
+14. **Phase 11.7 — insufficient evidence for a Phase 6 structural rewrite:** win rate (~33–38%) and payoff (TEST PF ~0.55) both look weak, and blockers *suggest* location/MTF/RR friction, but n is too small to localize a safe structural change. Forcing confluence edits now would be overfitting with a bigger blast radius than threshold tweaks. Prefer more history before reopening rule surgery.  
+15. **Phase 11.8 — candle-level ML is research-only:** full-history triple-barrier dataset (~16 294 rows) replaces the thin ~34 trade-outcome sample for *ML research*, but held-out directional skill is weak (~2.7pp over majority). Artifacts live in `data/ml_datasets_candle/` and `artifacts/ml_candle/`. **Not** wired into Phase 6/10. UI `bar_limit=220` remains preview-only.  
+16. **Phase 11.9 — liquidity sweep investigation inconclusive:** on TRAIN+VAL, sweep is unmet on ~78% of high-score no-trade samples (15-pt score gap) but sole unmet only ~6%. 1H reclaim sweeps are sparse (avg ~138 bars between unique events; ~23% of samples have any sweep in 40 bars). Widening `recent_sweep_bars` did nothing; 1H→15m fallback added trades but worsened VAL expectancy. **No production rule change.** Live `✗ Liquidity Sweep` on NO_TRADE/INVALIDATED cards is often a listed unmet condition, not a hard `liquidity_required` veto.
+17. **Phase 11.11 — SL geometry fix does not clear Phase 12:** controlled re-run on the same Phase 11.6 window shows ALL expectancy ~unchanged (+0.07R) with more trades and worse max DD; TEST flips positive on n=9 only. Keep the Path B SL fix; do **not** treat that as a GO.
+18. **Phase 11.12 — SLVONUSD is additive and ungated:** silver has its own contract spec and candle store. PAXGUSD’s NO-GO does **not** apply to SLVONUSD, and a future SLVONUSD backtest would **not** clear PAXGUSD. Evaluate each instrument on its own evidence.
 
 ---
 
 ## 15. Next step
 
-Phase 11.11 re-checked the Phase 11.6 NO-GO after the Path B SL fix — **NO-GO still stands.** Phase 11.10.1 sessions remain UI/reference only. Do not loosen liquidity sweep in production without a pre-registered recalibration pass.
+Phase 11.12 added **SLVONUSD** as a second independent Delta instrument with its own theme and Phase 12 gate (unevaluated). **PAXGUSD remains NO-GO** after Phase 11.11. Do not loosen liquidity sweep in production without a pre-registered recalibration pass. Do not blend silver and gold research results.
+
+Optional next work (when ready):
+1. Continue PAXGUSD monitoring per [docs/monitoring-checklist.md](docs/monitoring-checklist.md)
+2. Fresh SLVONUSD backtest / expectancy study on its own history (does not clear PAXGUSD)
+3. Prefer more history before reopening Phase 6 structural edits
+4. Optional: longer legacy XAUUSD reference study (do not blend with Delta)
 
 **Operating mode:** patience + scheduled monitoring — not more strategy code. Follow [docs/monitoring-checklist.md](docs/monitoring-checklist.md); log each pass in [docs/recheck-log.md](docs/recheck-log.md).
 

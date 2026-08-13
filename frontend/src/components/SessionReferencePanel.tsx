@@ -25,7 +25,7 @@ export function SessionReferencePanel({
   return (
     <div data-testid="session-reference-panel" className="space-y-3">
       <p className="text-[11px] leading-relaxed text-gold-muted">
-        Gold/PAXGUSD volatility characteristically differs by session. Times shown
+        Gold / silver (PAXGUSD / SLVONUSD) volatility characteristically differs by session. Times shown
         in IST (UTC+5:30). Display only — does not affect signals.
       </p>
 

@@ -6,10 +6,12 @@ from typing import Dict, List
 
 from app.instruments.paxgusd import PAXGUSD_SPEC
 from app.instruments.schemas import InstrumentSpec, InstrumentType, SpecVerification
+from app.instruments.slvonusd import SLVONUSD_SPEC
 
 DEFAULT_INSTRUMENT = "PAXGUSD"
 
-# Spot gold research pair (not Delta perpetual) — configurable, not exchange-verified
+# Legacy spot gold research pair (not Delta perpetual) — kept for mock/tests only.
+# Not shown in the primary UI symbol selector (Phase 11.12 → SLVONUSD).
 XAUUSD_SPEC = InstrumentSpec(
     symbol="XAUUSD",
     base_asset="XAU",
@@ -33,7 +35,7 @@ XAUUSD_SPEC = InstrumentSpec(
     data_source="research_config",
     verification=SpecVerification.CONFIGURED,
     verification_notes=[
-        "Spot-style research instrument — not Delta PAXGUSD perpetual",
+        "Spot-style research instrument — not Delta perpetual; UI tab removed in Phase 11.12",
         "contract_size=1 oz research assumption — UNVERIFIED for any broker",
     ],
     exchange="RESEARCH",
@@ -41,6 +43,7 @@ XAUUSD_SPEC = InstrumentSpec(
 
 _REGISTRY: Dict[str, InstrumentSpec] = {
     PAXGUSD_SPEC.symbol: PAXGUSD_SPEC,
+    SLVONUSD_SPEC.symbol: SLVONUSD_SPEC,
     XAUUSD_SPEC.symbol: XAUUSD_SPEC,
 }
 

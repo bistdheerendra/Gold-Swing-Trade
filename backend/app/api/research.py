@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
 from app.combined.model_runtime import ModelUnavailableError
-from app.research.binance_suggest import suggest_from_binance
+from app.research.binance_suggest import suggest_from_binance_async
 from app.research.binance_weekly import run_weekly_update, status_snapshot
 
 router = APIRouter(prefix="/research", tags=["research"])
@@ -18,14 +18,20 @@ router = APIRouter(prefix="/research", tags=["research"])
 async def binance_suggest(
     model_id: Optional[str] = Query(default=None),
     limit: int = Query(default=400, ge=120, le=2000),
+    live: bool = Query(
+        default=True,
+        description="Fetch latest PAXGUSDT futures klines from Binance (default).",
+    ),
 ) -> Dict[str, Any]:
     """
-    Binance PAXGUSDT candle-ML suggestion.
+    Binance PAXGUSDT candle-ML suggestion on live futures bars (CSV fallback).
 
     Research reference only — does not change Delta PAXGUSD strategy / Phase 12.
     """
     try:
-        return suggest_from_binance(model_id=model_id, limit=limit)
+        return await suggest_from_binance_async(
+            model_id=model_id, limit=limit, live=live
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ModelUnavailableError as exc:

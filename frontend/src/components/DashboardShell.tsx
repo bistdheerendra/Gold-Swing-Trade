@@ -57,6 +57,7 @@ import { formatPrice } from "../lib/chartData";
 import { type EmaPeriod } from "../lib/ema";
 import { supportsSessionBands } from "../lib/sessions";
 import { DEFAULT_SYMBOL, symbolLabel, type TradeSymbol } from "../lib/symbols";
+import { applyInstrumentTheme } from "../lib/theme";
 import {
   DEFAULT_SMC_OVERLAYS,
   type SmcOverlayKey,
@@ -118,6 +119,10 @@ export function DashboardShell({
   const [sessionError, setSessionError] = useState<string | null>(null);
   const chartHeight = useResponsiveChartHeight();
   const sessionBandsAvailable = supportsSessionBands(timeframe);
+
+  useEffect(() => {
+    applyInstrumentTheme(symbol);
+  }, [symbol]);
 
   useEffect(() => {
     let cancelled = false;

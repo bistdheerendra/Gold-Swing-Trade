@@ -53,11 +53,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.11.5",
+    version="0.11.12",
     description=(
-        "Gold Swing AI — decision-support platform for PAXGUSD research. "
+        "Gold Swing AI — decision-support platform for PAXGUSD / SLVONUSD research. "
         "No automatic real-money trade execution. "
-        "Phase 11.5: real free-tier market data (Binance / Twelve Data)."
+        "Phase 11.12: Delta India multi-instrument + gold/silver themes."
     ),
     lifespan=lifespan,
 )
@@ -89,6 +89,6 @@ async def root() -> dict[str, str]:
     return {
         "name": settings.app_name,
         "status": "ok",
-        "phase": "11.5",
+        "phase": "11.12",
         "docs": "/docs",
     }

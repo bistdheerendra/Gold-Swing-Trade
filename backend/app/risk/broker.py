@@ -132,7 +132,7 @@ def get_broker_adapter(
 
 
 class PaxgusdDataAdapter:
-    """Symbol / precision mapping for PAXGUSD research."""
+    """Symbol / precision mapping for PAXGUSD research (legacy name)."""
 
     symbol = "PAXGUSD"
 
@@ -141,8 +141,32 @@ class PaxgusdDataAdapter:
 
     def normalize_symbol(self, symbol: str) -> str:
         s = symbol.strip().upper().replace("/", "").replace("-", "")
-        if s in ("PAXG", "PAXGUSDT", "PAXG-USD", "XAUUSD"):
+        if s in ("PAXG", "PAXGUSDT"):
             return "PAXGUSD"
+        if s in ("SLV", "SLVON", "SLVONUSDT"):
+            return "SLVONUSD"
+        return s
+
+    def round_price(self, price: float) -> float:
+        return self.spec.round_price(price)
+
+    def round_quantity(self, qty: float) -> float:
+        return self.spec.round_quantity(qty)
+
+
+class InstrumentDataAdapter:
+    """Per-symbol precision mapping for Delta research instruments."""
+
+    def __init__(self, symbol: str = "PAXGUSD") -> None:
+        self.symbol = symbol.strip().upper()
+        self.spec = get_instrument(self.symbol)
+
+    def normalize_symbol(self, symbol: str) -> str:
+        s = symbol.strip().upper().replace("/", "").replace("-", "")
+        if s in ("PAXG", "PAXGUSDT"):
+            return "PAXGUSD"
+        if s in ("SLV", "SLVON", "SLVONUSDT"):
+            return "SLVONUSD"
         return s
 
     def round_price(self, price: float) -> float:
