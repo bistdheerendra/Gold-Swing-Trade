@@ -3,7 +3,7 @@
 **Location:** `Desktop/Gold Trader`  
 **Product name:** Gold Swing AI  
 **Folder name:** Gold Trader  
-**Current phase:** **11.12 — SLVONUSD Instrument + Silver Theme (complete)**  
+**Current phase:** **11.12 — SLVONUSD Instrument + Silver Theme (complete)** · **11.12.1 Live Paper UI (research)**  
 **Next phase:** **Blocked** — Phase 12 still NO-GO for **PAXGUSD**; **SLVONUSD** starts its own Phase 12 gate from scratch (not yet evaluated). Monitor PAXGUSD per [docs/monitoring-checklist.md](docs/monitoring-checklist.md)  
 **Last updated:** 2026-08-13
 
@@ -82,6 +82,7 @@ Market Data (real free-tier)  ← Phase 11.5
   → Trading Session Overlay      ← Phase 11.10 (UI/reference only)
   → Post-Fix Backtest Re-Run     ← Phase 11.11 (NO-GO stands)
   → SLVONUSD + Silver Theme      ← Phase 11.12
+  → Live Paper UI (browser)      ← Phase 11.12.1 (research only; not Phase 12 GO)
   → Paper Trading + Alerts       ← Phase 12 (blocked for PAXGUSD; SLVONUSD unevaluated)
   → Production Hardening
 ```
@@ -96,8 +97,8 @@ Components are loosely coupled. UI must not hide trading logic.
 Gold Trader/
 ├── frontend/                 # React + Vite dashboard
 │   └── src/
-│       ├── components/       # Dashboard, chart, AiLoader, risk, ML pages
-│       └── lib/              # API client, EMA, chart adapters, SMC theme
+│       ├── components/       # Dashboard, chart, AppHeader, Live Paper, risk, ML pages
+│       └── lib/              # API client, EMA, chart adapters, paperTrade, theme
 ├── backend/                  # FastAPI application
 │   └── app/
 │       ├── api/              # health, market, ta, smc, mtf, strategy, risk, ml…
@@ -149,6 +150,7 @@ Gold Trader/
 | 11.10.1 | DST-Aware Session Windows | **COMPLETE** |
 | 11.11 | Post-Fix Backtest Re-Run (SL geometry) | **COMPLETE — NO-GO stands** |
 | 11.12 | SLVONUSD Instrument + Silver Theme | **COMPLETE** |
+| 11.12.1 | Live Paper Trades UI (client-side) | **COMPLETE** — research only; does **not** clear Phase 12 |
 | 12 | Paper Trading + Live Monitoring + Alerts | **BLOCKED** (PAXGUSD NO-GO; SLVONUSD not yet gated) |
 | 13 | Production Hardening & Deployment | Pending |
 
@@ -296,6 +298,19 @@ See [docs/roadmap.md](docs/roadmap.md) for full phase descriptions.
 - Engines remain symbol-parameterized; each instrument is an **independent research track** with its own Phase 12 gate (SLVONUSD not yet evaluated; PAXGUSD NO-GO is not inherited)
 - Docs: [docs/market-data.md](docs/market-data.md), [docs/theming.md](docs/theming.md)
 
+### Phase 11.12.1 — Live Paper Trades UI (**research only; not Phase 12**)
+- Frontend page **Live Paper** (`LivePaperTradePage`) auto-picks live strategy BUY/SELL for the selected symbol
+- Size fixed at **1 PAXG** (1000 × 0.001) or **1 SLVON** (10 × 0.1); tracks SL / TP1 vs live ticker; closes on hit
+- Persistence: browser `localStorage` key `gold-swing-paper-trades-v1` — **no** broker, **no** backend order API
+- Engine: `frontend/src/lib/paperTrade.ts` (Vitest-covered)
+- **Idempotency / anti-spam (2026-08-13):**
+  - Atomic open/close against localStorage (close by trade id once)
+  - `consumedKeys` blocks re-opening the same signal / same entry·SL·TP levels after close
+  - Refuse open if market price is already past SL or TP (stops TP→reopen loops)
+  - History load dedupes by trade id **and** fingerprint (same levels + close minute)
+- Shared sticky `AppHeader` for all pages; live chart forming-candle + countdown remain separate chart polish
+- Does **not** unlock Phase 12 GO, alerts, or live monitoring product scope
+
 ---
 
 ## 8. API reference (current)
@@ -416,13 +431,14 @@ cd frontend && npm test
 
 Gold-themed trading terminal with:
 
-### Layout (2026-08-12 polish)
-- **Full-width price chart** on top (EMA + SMC + optional session bands)
+### Layout (2026-08-13)
+- Shared sticky **`AppHeader`**: symbol tabs `PAXGUSD | SLVONUSD`, page nav, responsive hamburger `< lg`
+- **Full-width price chart** on top (EMA + SMC + optional session bands; live ticker updates forming candle + countdown)
 - **Equal three-column content grid** below (no empty center gap):
   - Left: Market Overview, **Trading Sessions (IST)**, Multi-Timeframe, SMC Analysis  
   - Center: SMC Overlays, TA Snapshot, EMA toggles, Signal History  
   - Right: Current Signal, Combined Signal, Risk & Position, Explainability  
-- Nav to Backtest, ML Dataset, ML Model Lab, Risk Management pages
+- Nav to Backtest, ML Dataset, ML Model Lab, Risk Management, **Live Paper** pages
 
 ### Chart / overlays
 - Candlestick zoom / pan / crosshair / OHLC banner  
@@ -440,8 +456,9 @@ Gold-themed trading terminal with:
 - Live BUY / SELL / WAIT / NO TRADE signal card  
 - Signal history table  
 - Combined Signal (Rule + ML) panel  
-- PAXGUSD risk calculator + trade plan status  
+- PAXGUSD / SLVONUSD risk calculator + trade plan status  
 - Session reference table + live “active now” (display only)  
+- **Live Paper** — client-side auto-pick + SL/TP book (localStorage; research only)  
 - Research-only disclaimers throughout  
 
 ---
@@ -496,7 +513,7 @@ Gold-themed trading terminal with:
 7. Strategy scores are research heuristics, not proven expectancy  
 8. ML confidence is **not** a guaranteed win probability  
 9. Signal history is in-memory (cleared on API restart)  
-10. No paper/live execution yet (Phase 12 blocked by Phase 11.6 NO-GO for PAXGUSD; SLVONUSD not yet gated)  
+10. **No Phase-12 paper/live product yet** (blocked by Phase 11.6 NO-GO for PAXGUSD; SLVONUSD not yet gated). A **client-side Live Paper** UI (11.12.1) exists for research only — browser localStorage, no broker, no alerts pipeline  
 11. No broker order placement or real-money paths  
 12. **Phase 11.6 — real PAXGUSD rule strategy is not Phase-12-ready:** expanded max-history ALL backtest is only weakly positive (~+0.07R pre-recal, ~+0.01R after a rejected vol-penalty tweak, n≈34–40); held-out TEST is **−0.39R on n=6**. Delta history starts ~2026-02-19 — sample remains thin. Default `StrategyConfig` thresholds unchanged; candidate `config_real_recal.json` is audit-only.  
 13. Phase 11.5 “0 trades” on Phase 10 TEST was largely a **measurement bug** (warmup applied after slicing a short TEST window); fixed in 11.6 via full-series context + `chronological_eval_bounds`. After the fix, TEST produces trades but still loses on average.  
@@ -505,12 +522,13 @@ Gold-themed trading terminal with:
 16. **Phase 11.9 — liquidity sweep investigation inconclusive:** on TRAIN+VAL, sweep is unmet on ~78% of high-score no-trade samples (15-pt score gap) but sole unmet only ~6%. 1H reclaim sweeps are sparse (avg ~138 bars between unique events; ~23% of samples have any sweep in 40 bars). Widening `recent_sweep_bars` did nothing; 1H→15m fallback added trades but worsened VAL expectancy. **No production rule change.** Live `✗ Liquidity Sweep` on NO_TRADE/INVALIDATED cards is often a listed unmet condition, not a hard `liquidity_required` veto.
 17. **Phase 11.11 — SL geometry fix does not clear Phase 12:** controlled re-run on the same Phase 11.6 window shows ALL expectancy ~unchanged (+0.07R) with more trades and worse max DD; TEST flips positive on n=9 only. Keep the Path B SL fix; do **not** treat that as a GO.
 18. **Phase 11.12 — SLVONUSD is additive and ungated:** silver has its own contract spec and candle store. PAXGUSD’s NO-GO does **not** apply to SLVONUSD, and a future SLVONUSD backtest would **not** clear PAXGUSD. Evaluate each instrument on its own evidence.
+19. **Phase 11.12.1 — Live Paper is not a Phase 12 GO:** browser paper book can open/close SL/TP for research UX; it does not imply strategy expectancy, alerts, or broker readiness. Treat PnL there as illustrative only.
 
 ---
 
 ## 15. Next step
 
-Phase 11.12 added **SLVONUSD** as a second independent Delta instrument with its own theme and Phase 12 gate (unevaluated). **PAXGUSD remains NO-GO** after Phase 11.11. Do not loosen liquidity sweep in production without a pre-registered recalibration pass. Do not blend silver and gold research results.
+Phase 11.12 added **SLVONUSD** as a second independent Delta instrument with its own theme and Phase 12 gate (unevaluated). **11.12.1** added a client-side Live Paper UI for research — **not** a Phase 12 unlock. **PAXGUSD remains NO-GO** after Phase 11.11. Do not loosen liquidity sweep in production without a pre-registered recalibration pass. Do not blend silver and gold research results.
 
 Optional next work (when ready):
 1. Continue PAXGUSD monitoring per [docs/monitoring-checklist.md](docs/monitoring-checklist.md)
@@ -520,7 +538,7 @@ Optional next work (when ready):
 
 **Operating mode:** patience + scheduled monitoring — not more strategy code. Follow [docs/monitoring-checklist.md](docs/monitoring-checklist.md); log each pass in [docs/recheck-log.md](docs/recheck-log.md).
 
-Do **not** run `START PHASE 12`. Do **not** auto-wire candle models into live signals.
+Do **not** run `START PHASE 12`. Do **not** auto-wire candle models into live signals. Do **not** treat Live Paper PnL as a GO signal.
 
 Preferred next work:
 
@@ -528,7 +546,7 @@ Preferred next work:
 2. Escalate to a full Phase-11.6-style diagnosis only when checklist thresholds fire (e.g. ~80–100 trades, or ALL expectancy &gt; +0.15R for two consecutive rechecks)  
 3. Optional: Binance PAXGUSDT research sidecar ([docs/binance-paxgusdt-research.md](docs/binance-paxgusdt-research.md)) — advisory only; weekly auto backfill/retrain while API runs (`BINANCE_WEEKLY_UPDATE_ENABLED`); do not blend into Delta GO  
 4. Optional: longer XAUUSD reference study (do not blend with Delta PAXGUSD)  
-5. Strategy GO still required (positive held-out expectancy on a defendable sample) before paper trading
+5. Strategy GO still required (positive held-out expectancy on a defendable sample) before **Phase 12** paper trading + alerts
 
 ```text
 START PHASE 12

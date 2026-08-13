@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchMarketTicker,
   fetchStrategyAnalyze,
@@ -8,18 +8,16 @@ import { formatIstDateTime, formatPrice } from "../lib/chartData";
 import {
   baseLabel,
   checkExit,
-  closeTrade,
+  closeOpenTrade,
   formatUsd,
   loadPaperStore,
+  openPaperTrade,
   savePaperStore,
-  tryOpenFromSignal,
   unrealizedPnlUsd,
   type ClosedPaperTrade,
   type OpenPaperTrade,
 } from "../lib/paperTrade";
-import {
-  type TradeSymbol,
-} from "../lib/symbols";
+import { type TradeSymbol } from "../lib/symbols";
 import { AiLoader } from "./AiLoader";
 
 type Props = {
@@ -39,52 +37,35 @@ export function LivePaperTradePage({ symbol }: Props) {
   const [status, setStatus] = useState("Starting…");
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const closingRef = useRef(false);
 
-  useEffect(() => {
+  const syncFromStore = useCallback(() => {
     const store = loadPaperStore();
     setHistory(store.history);
-    if (store.open && store.open.symbol === symbol) {
-      setOpen(store.open);
-    } else {
-      setOpen(null);
-    }
-    setHydrated(true);
+    setOpen(
+      store.open && store.open.symbol === symbol ? store.open : null,
+    );
   }, [symbol]);
 
-  const persist = useCallback(
-    (nextOpen: OpenPaperTrade | null, nextHistory: ClosedPaperTrade[]) => {
-      setOpen(nextOpen);
-      setHistory(nextHistory);
-      // Keep other-symbol open trade if we're only viewing history for current symbol
-      const prior = loadPaperStore();
-      const openToSave =
-        nextOpen ??
-        (prior.open && prior.open.symbol !== symbol ? prior.open : null);
-      savePaperStore({ open: openToSave, history: nextHistory });
-    },
-    [symbol],
-  );
+  useEffect(() => {
+    syncFromStore();
+    setHydrated(true);
+  }, [syncFromStore]);
 
   const closeOpen = useCallback(
-    (price: number, reason: "TP" | "SL" | "MANUAL") => {
-      setOpen((current) => {
-        if (!current) return null;
-        const closed = closeTrade(current, price, reason);
-        setHistory((prev) => {
-          const next = [closed, ...prev].slice(0, 200);
-          const prior = loadPaperStore();
-          savePaperStore({
-            open:
-              prior.open && prior.open.id !== current.id ? prior.open : null,
-            history: next,
-          });
-          return next;
-        });
+    (tradeId: string, price: number, reason: "TP" | "SL" | "MANUAL") => {
+      if (closingRef.current) return;
+      closingRef.current = true;
+      try {
+        const closed = closeOpenTrade(tradeId, price, reason);
+        if (!closed) return;
+        syncFromStore();
         setStatus(`Closed via ${reason} @ ${formatPrice(price)}`);
-        return null;
-      });
+      } finally {
+        closingRef.current = false;
+      }
     },
-    [],
+    [syncFromStore],
   );
 
   // Ticker + SL/TP monitor
@@ -113,7 +94,7 @@ export function LivePaperTradePage({ symbol }: Props) {
         if (active) {
           const hit = checkExit(active, price);
           if (hit) {
-            closeOpen(hit.exit, hit.reason);
+            closeOpen(active.id, hit.exit, hit.reason);
           }
         }
       } catch (err: unknown) {
@@ -170,22 +151,21 @@ export function LivePaperTradePage({ symbol }: Props) {
         }
         if (price == null) return;
 
-        const opened = tryOpenFromSignal(
+        const opened = openPaperTrade(
           symbol,
           {
             signal: res.signal,
             signalId: res.signal_id,
+            asOf: res.as_of,
             entry: res.entry,
             stop_loss: res.stop_loss,
             targets: res.targets,
             score: res.score,
           },
           price,
-          null,
         );
         if (opened) {
-          const hist = loadPaperStore().history;
-          persist(opened, hist);
+          syncFromStore();
           setStatus(`Picked ${opened.side} @ ${formatPrice(opened.entry)}`);
         }
       } catch (err: unknown) {
@@ -203,7 +183,7 @@ export function LivePaperTradePage({ symbol }: Props) {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [symbol, hydrated, autoPick, persist]);
+  }, [symbol, hydrated, autoPick, syncFromStore]);
 
   const activeOpen = open && open.symbol === symbol ? open : null;
   const pnl = useMemo(() => {
@@ -225,13 +205,18 @@ export function LivePaperTradePage({ symbol }: Props) {
 
   const manualClose = () => {
     if (!activeOpen || currentPrice == null) return;
-    closeOpen(currentPrice, "MANUAL");
+    closeOpen(activeOpen.id, currentPrice, "MANUAL");
   };
 
   const clearHistory = () => {
     const prior = loadPaperStore();
     const kept = prior.history.filter((t) => t.symbol !== symbol);
-    persist(activeOpen, kept);
+    savePaperStore({
+      open: prior.open,
+      history: kept,
+      consumedKeys: prior.consumedKeys,
+    });
+    syncFromStore();
   };
 
   return (
@@ -455,10 +440,7 @@ function OpenTradeCard({
         />
         <Row label="Stop loss" value={formatPrice(trade.stopLoss)} />
         <Row label="Take profit" value={formatPrice(trade.takeProfit)} />
-        <Row
-          label="Opened"
-          value={formatIstDateTime(trade.openedAt)}
-        />
+        <Row label="Opened" value={formatIstDateTime(trade.openedAt)} />
       </dl>
 
       <button
@@ -514,4 +496,3 @@ function Stat({
     </div>
   );
 }
-
