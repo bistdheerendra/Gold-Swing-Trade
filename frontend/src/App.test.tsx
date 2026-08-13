@@ -14,6 +14,13 @@ vi.mock("./lib/api", () => ({
     model_version: "none",
   }),
   listMlModels: vi.fn().mockResolvedValue({ count: 0, models: [] }),
+  fetchMarketTicker: vi.fn().mockResolvedValue({
+    symbol: "PAXGUSD",
+    last: 2309,
+    bid: 2308.5,
+    ask: 2309.5,
+    spread_source: "LIVE",
+  }),
   loadChartBars: vi.fn().mockResolvedValue({
     symbol: "PAXGUSD",
     timeframe: "1h",
@@ -287,15 +294,25 @@ vi.mock("./lib/api", () => ({
   }),
 }));
 
+vi.mock("./components/charts/CandleCountdown", () => ({
+  CandleCountdown: () => <div data-testid="candle-countdown">00:42</div>,
+}));
+
 vi.mock("./components/charts/CandlestickChart", () => ({
   CandlestickChartView: () => <div data-testid="candlestick-chart">chart</div>,
   OhlcBanner: ({
     readout,
+    liveBar,
+    countdown,
   }: {
     readout: { open: number | null; close: number | null };
+    liveBar?: { open: number; close: number } | null;
+    countdown?: React.ReactNode;
   }) => (
     <div data-testid="ohlc-banner">
-      O {readout.open ?? "—"} C {readout.close ?? "—"}
+      O {readout.open ?? liveBar?.open ?? "—"} C{" "}
+      {readout.close ?? liveBar?.close ?? "—"}
+      {countdown}
     </div>
   ),
 }));

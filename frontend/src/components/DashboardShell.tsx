@@ -21,12 +21,14 @@ import {
   OhlcBanner,
   type OhlcReadout,
 } from "./charts/CandlestickChart";
+import { CandleCountdown } from "./charts/CandleCountdown";
 import { ChartOverlayMenus } from "./charts/ChartOverlayMenus";
 import { TimeframeSelector } from "./TimeframeSelector";
 import { SymbolSelector } from "./SymbolSelector";
 import {
   fetchHealth,
   fetchCombinedAnalyze,
+  fetchMarketTicker,
   fetchMtfAnalyze,
   fetchSmcAnalyze,
   fetchStrategyAnalyze,
@@ -46,6 +48,7 @@ import {
   type TaAnalyzeResponse,
   type Timeframe,
 } from "../lib/api";
+import { applyLivePriceToBars } from "../lib/liveBars";
 import { AiLoader } from "./AiLoader";
 import { MultiTimeframePanel } from "./MultiTimeframePanel";
 import { SessionReferencePanel } from "./SessionReferencePanel";
@@ -117,6 +120,8 @@ export function DashboardShell({
   const [sessionAsOf, setSessionAsOf] = useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [liveOk, setLiveOk] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
   const chartHeight = useResponsiveChartHeight();
   const sessionBandsAvailable = supportsSessionBands(timeframe);
 
@@ -208,16 +213,13 @@ export function DashboardShell({
         });
         if (cancelled) return;
         setBars(data.bars);
-        const last = data.bars[data.bars.length - 1];
-        if (last) {
-          setOhlc({
-            time: last.timestamp,
-            open: last.open,
-            high: last.high,
-            low: last.low,
-            close: last.close,
-          });
-        }
+        setOhlc({
+          time: null,
+          open: null,
+          high: null,
+          low: null,
+          close: null,
+        });
 
         const settled = await Promise.allSettled([
           fetchTaAnalyze(timeframe, { limit: 500, symbol }),
@@ -286,9 +288,88 @@ export function DashboardShell({
     };
   }, [timeframe, symbol, mlModelId]);
 
+  const softRefreshBars = useCallback(async () => {
+    try {
+      const data = await loadChartBars(timeframe, {
+        limit: 500,
+        seedBars: 120,
+        symbol,
+      });
+      setBars(data.bars);
+      setLiveOk(true);
+      setLiveError(null);
+    } catch (err: unknown) {
+      setLiveOk(false);
+      setLiveError(err instanceof Error ? err.message : "Live refresh failed");
+    }
+  }, [timeframe, symbol]);
+
+  // Live ticker → update forming candle (gold or silver)
+  useEffect(() => {
+    let cancelled = false;
+    let inFlight = false;
+
+    const tick = async () => {
+      if (cancelled || inFlight || chartLoading) return;
+      inFlight = true;
+      try {
+        const ticker = await fetchMarketTicker(symbol);
+        if (cancelled) return;
+        const price = ticker.last ?? ticker.mark_price ?? ticker.bid ?? ticker.ask;
+        if (price == null || !Number.isFinite(price)) {
+          setLiveOk(false);
+          setLiveError("Ticker has no last price");
+          return;
+        }
+        setBars((prev) => applyLivePriceToBars(prev, price));
+        setLiveOk(true);
+        setLiveError(null);
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setLiveOk(false);
+          setLiveError(err instanceof Error ? err.message : "Ticker failed");
+        }
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void tick();
+    const id = window.setInterval(() => void tick(), 5_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [symbol, timeframe, chartLoading]);
+
+  // Soft OHLCV refresh so new candles appear without blanking the chart
+  useEffect(() => {
+    if (chartLoading) return;
+    const id = window.setInterval(() => {
+      void softRefreshBars();
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [chartLoading, softRefreshBars]);
+
+  const onCandleBoundary = useCallback(() => {
+    void softRefreshBars();
+  }, [softRefreshBars]);
+
   const lastClose = useMemo(() => {
     const last = bars[bars.length - 1];
     return last?.close ?? null;
+  }, [bars]);
+
+  const lastBar = useMemo(() => {
+    const last = bars[bars.length - 1];
+    if (!last) return null;
+    return {
+      open: last.open,
+      high: last.high,
+      low: last.low,
+      close: last.close,
+      timestamp: last.timestamp,
+    };
   }, [bars]);
 
   const mlProbLabel = useMemo(() => {
@@ -460,12 +541,27 @@ export function DashboardShell({
           title="Price Chart"
           action={
             <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
-              <span className="hidden text-[10px] uppercase tracking-wider text-gold-muted sm:inline">
-                {bars[0]?.source === "delta_india"
-                  ? "Delta India · live"
-                  : bars[0]?.source
-                    ? `${bars[0].source}`
-                    : "Loading…"}
+              <span
+                className="hidden items-center gap-1.5 text-[10px] uppercase tracking-wider text-gold-muted sm:inline-flex"
+                title={liveError ?? undefined}
+              >
+                <span
+                  className={`inline-block h-1.5 w-1.5 rounded-full ${
+                    liveOk
+                      ? "animate-pulse bg-bull"
+                      : liveError
+                        ? "bg-bear"
+                        : "bg-wait"
+                  }`}
+                  aria-hidden
+                />
+                {liveOk
+                  ? "Live"
+                  : liveError
+                    ? "Live paused"
+                    : bars[0]?.source
+                      ? String(bars[0].source)
+                      : "Loading…"}
               </span>
               <button
                 type="button"
@@ -509,7 +605,17 @@ export function DashboardShell({
             </div>
           }
         >
-          <OhlcBanner readout={ohlc} fallbackClose={lastClose} />
+          <OhlcBanner
+            readout={ohlc}
+            fallbackClose={lastClose}
+            liveBar={lastBar}
+            countdown={
+              <CandleCountdown
+                timeframe={timeframe}
+                onCandleClose={onCandleBoundary}
+              />
+            }
+          />
           <div className="relative overflow-hidden rounded-2xl border border-line/50 bg-ink p-1 sm:p-2">
             {chartLoading ? (
               <div

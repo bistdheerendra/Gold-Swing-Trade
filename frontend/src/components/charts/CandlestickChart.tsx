@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import {
   ColorType,
   CrosshairMode,
@@ -352,7 +352,7 @@ export function CandlestickChartView({
     };
   }, [height]);
 
-  // Bars / market data only — refit once when series changes
+  // Bars / market data — refit only when bar count changes (new candle), not on live ticks
   useEffect(() => {
     if (!readyRef.current || !candleRef.current || !chartRef.current) return;
 
@@ -382,7 +382,11 @@ export function CandlestickChartView({
       timeframeRef.current,
     );
 
-    if (candleData.length > 0) {
+    const prevCount = (candleRef.current as SmcLineHost & { _barCount?: number })
+      ._barCount;
+    (candleRef.current as SmcLineHost & { _barCount?: number })._barCount =
+      candleData.length;
+    if (candleData.length > 0 && prevCount !== candleData.length) {
       focusRecentBars(chartRef.current, candleData.length);
     }
   }, [bars]);
@@ -429,15 +433,35 @@ export function CandlestickChartView({
 export function OhlcBanner({
   readout,
   fallbackClose,
+  liveBar,
+  countdown,
 }: {
   readout: OhlcReadout;
   fallbackClose?: number | null;
+  /** Last candle (incl. live-updated) when crosshair is idle. */
+  liveBar?: {
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    timestamp?: string;
+  } | null;
+  countdown?: ReactNode;
 }) {
-  const close = readout.close ?? fallbackClose ?? null;
+  const hovering = readout.open != null && readout.close != null;
+  const open = hovering ? readout.open : (liveBar?.open ?? null);
+  const high = hovering ? readout.high : (liveBar?.high ?? null);
+  const low = hovering ? readout.low : (liveBar?.low ?? null);
+  const close =
+    (hovering ? readout.close : null) ??
+    liveBar?.close ??
+    fallbackClose ??
+    null;
+  const time = hovering
+    ? readout.time
+    : (liveBar?.timestamp ?? readout.time ?? null);
   const bull =
-    readout.open != null && readout.close != null
-      ? readout.close >= readout.open
-      : null;
+    open != null && close != null ? close >= open : null;
   const tone =
     bull == null ? "text-cream" : bull ? "text-bull" : "text-bear";
 
@@ -447,22 +471,23 @@ export function OhlcBanner({
       data-testid="ohlc-banner"
     >
       <span>
-        O <span className={tone}>{formatPrice(readout.open ?? close)}</span>
+        O <span className={tone}>{formatPrice(open ?? close)}</span>
       </span>
       <span>
-        H <span className="text-cream">{formatPrice(readout.high ?? close)}</span>
+        H <span className="text-cream">{formatPrice(high ?? close)}</span>
       </span>
       <span>
-        L <span className="text-cream">{formatPrice(readout.low ?? close)}</span>
+        L <span className="text-cream">{formatPrice(low ?? close)}</span>
       </span>
       <span>
         C <span className={tone}>{formatPrice(close)}</span>
       </span>
-      {readout.time ? (
+      {time ? (
         <span className="w-full truncate text-gold-muted sm:w-auto">
-          {formatIstDateTime(readout.time)}
+          {formatIstDateTime(time)}
         </span>
       ) : null}
+      {countdown ? <div className="ml-auto">{countdown}</div> : null}
     </div>
   );
 }

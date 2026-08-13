@@ -118,6 +118,7 @@ export async function fetchMarketTicker(symbol?: string): Promise<{
   bid?: number | null;
   ask?: number | null;
   last?: number | null;
+  mark_price?: number | null;
   spread_source?: string;
   source?: string;
 }> {
