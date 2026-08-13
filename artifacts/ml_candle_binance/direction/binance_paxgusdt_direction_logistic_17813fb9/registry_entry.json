@@ -683,7 +683,7 @@
     "test": 0.399821
   },
   "trained_at": "2026-08-12T11:43:29.811301+00:00",
-  "artifact_dir": "C:\\Users\\dheerendra.bist.DESKTOP-LGNCEAB\\Desktop\\Gold-Swing-Trade\\artifacts\\ml_candle_binance\\direction\\binance_paxgusdt_direction_logistic_17813fb9",
+  "artifact_dir": "C:\\Users\\admin\\Desktop\\Gold Trader\\artifacts\\ml_candle_binance\\direction\\binance_paxgusdt_direction_logistic_17813fb9",
   "notes": [
     "RESEARCH ONLY \u2014 not production",
     "Model selection used VALIDATION only",
