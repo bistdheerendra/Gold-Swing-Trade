@@ -10,8 +10,6 @@ import {
 import { DEFAULT_SYMBOL, TRADE_SYMBOLS, type TradeSymbol } from "../lib/symbols";
 import { AiLoader, AiLoaderOverlay } from "./AiLoader";
 
-type Props = { onBack: () => void };
-
 const TARGETS = [
   "direction",
   "strategy_outcome",
@@ -22,7 +20,7 @@ const TARGETS = [
 
 const MODEL_TYPES = ["logistic", "random_forest", "gradient_boosting", ""] as const;
 
-export function MlModelLabPage({ onBack }: Props) {
+export function MlModelLabPage() {
   const [symbol, setSymbol] = useState<TradeSymbol>(DEFAULT_SYMBOL);
   const [datasetId, setDatasetId] = useState("");
   const [dataset, setDataset] = useState<MlDatasetResult | null>(null);
@@ -96,26 +94,15 @@ export function MlModelLabPage({ onBack }: Props) {
   const filter = result?.test_filter;
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      <header className="border-b border-line/70 bg-ink-soft/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4 sm:py-4 md:px-6">
-          <div className="min-w-0">
-            <p className="font-display text-xl font-semibold text-gold-bright sm:text-2xl">
-              ML Model Lab
-            </p>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-gold-muted sm:text-xs sm:tracking-[0.2em]">
-              Phase 9 · RESEARCH ONLY · No live predictions
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onBack}
-            className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-sm text-cream hover:border-gold/50"
-          >
-            ← Dashboard
-          </button>
-        </div>
-      </header>
+    <div className="overflow-x-hidden">
+      <div className="mx-auto max-w-[1600px] px-3 pt-4 sm:px-4 md:px-6">
+        <h1 className="font-display text-xl font-semibold text-gold-bright sm:text-2xl">
+          ML Model Lab
+        </h1>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-gold-muted sm:text-xs sm:tracking-[0.2em]">
+          Phase 9 · RESEARCH ONLY · No live predictions
+        </p>
+      </div>
 
       <main className="mx-auto grid max-w-[1600px] gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 md:px-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         <section className="min-w-0 space-y-3 rounded-2xl border border-line/70 bg-panel/80 p-3 sm:p-4">

@@ -9,12 +9,9 @@ import {
 import {
   Activity,
   AlertTriangle,
-  Menu,
   RefreshCw,
   Shield,
-  Sparkles,
   Waves,
-  X,
 } from "lucide-react";
 import {
   CandlestickChartView,
@@ -24,9 +21,7 @@ import {
 import { CandleCountdown } from "./charts/CandleCountdown";
 import { ChartOverlayMenus } from "./charts/ChartOverlayMenus";
 import { TimeframeSelector } from "./TimeframeSelector";
-import { SymbolSelector } from "./SymbolSelector";
 import {
-  fetchHealth,
   fetchCombinedAnalyze,
   fetchMarketTicker,
   fetchMtfAnalyze,
@@ -38,7 +33,6 @@ import {
   listMlModels,
   loadChartBars,
   type CombinedSignalResponse,
-  type HealthResponse,
   type MtfAnalyzeResponse,
   type OHLCVBar,
   type SessionDefinitionDto,
@@ -59,8 +53,7 @@ import { RiskPanel } from "./RiskPanel";
 import { formatPrice } from "../lib/chartData";
 import { type EmaPeriod } from "../lib/ema";
 import { supportsSessionBands } from "../lib/sessions";
-import { DEFAULT_SYMBOL, symbolLabel, type TradeSymbol } from "../lib/symbols";
-import { applyInstrumentTheme } from "../lib/theme";
+import { symbolLabel, type TradeSymbol } from "../lib/symbols";
 import {
   DEFAULT_SMC_OVERLAYS,
   type SmcOverlayKey,
@@ -75,21 +68,13 @@ const initialEmaVisibility: Record<EmaPeriod, boolean> = {
 };
 
 export function DashboardShell({
-  onOpenBacktest,
-  onOpenMlDataset,
-  onOpenMlLab,
-  onOpenRisk,
+  symbol,
 }: {
-  onOpenBacktest?: () => void;
-  onOpenMlDataset?: () => void;
-  onOpenMlLab?: () => void;
-  onOpenRisk?: () => void;
+  symbol: TradeSymbol;
+  onSymbolChange?: (symbol: TradeSymbol) => void;
 }) {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [healthError, setHealthError] = useState<string | null>(null);
   const [toggles, setToggles] = useState<SmcOverlayVisibility>({ ...DEFAULT_SMC_OVERLAYS });
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
-  const [symbol, setSymbol] = useState<TradeSymbol>(DEFAULT_SYMBOL);
   const [bars, setBars] = useState<OHLCVBar[]>([]);
   const [chartLoading, setChartLoading] = useState(true);
   const [chartError, setChartError] = useState<string | null>(null);
@@ -113,7 +98,6 @@ export function DashboardShell({
   const [signalHistory, setSignalHistory] = useState<StrategySignalDto[]>([]);
   const [combined, setCombined] = useState<CombinedSignalResponse | null>(null);
   const [mlModelId, setMlModelId] = useState<string | undefined>(undefined);
-  const [navOpen, setNavOpen] = useState(false);
   const [showSessionBands, setShowSessionBands] = useState(true);
   const [sessionDefs, setSessionDefs] = useState<SessionDefinitionDto[]>([]);
   const [sessionActive, setSessionActive] = useState<string[]>([]);
@@ -125,28 +109,7 @@ export function DashboardShell({
   const chartHeight = useResponsiveChartHeight();
   const sessionBandsAvailable = supportsSessionBands(timeframe);
 
-  useEffect(() => {
-    applyInstrumentTheme(symbol);
-  }, [symbol]);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetchHealth()
-      .then((data) => {
-        if (!cancelled) {
-          setHealth(data);
-          setHealthError(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setHealthError(err instanceof Error ? err.message : "API unreachable");
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // Session definitions + active-now (refresh periodically; display only)
   useEffect(() => {
@@ -410,132 +373,9 @@ export function DashboardShell({
     }
   }, [symbol]);
 
-  const openPage = (fn?: () => void) => {
-    setNavOpen(false);
-    fn?.();
-  };
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      <header className="border-b border-line/70 bg-ink-soft/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-3 py-3 sm:px-4 sm:py-4 md:px-6">
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-gold/40 bg-gradient-to-br from-gold/30 to-gold-deep/20 shadow-[0_0_24px_rgba(212,175,55,0.18)] sm:h-11 sm:w-11">
-              <Sparkles className="h-5 w-5 text-gold-bright" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-display text-xl font-semibold tracking-wide text-gold-bright sm:text-2xl">
-                Gold Swing AI
-              </p>
-              <p className="truncate text-[10px] uppercase tracking-[0.18em] text-gold-muted sm:text-xs sm:tracking-[0.22em]">
-                Decision Support · No Auto Execution
-              </p>
-            </div>
-          </div>
-
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <div className="hidden items-center gap-2 text-sm xl:flex">
-              <StatusChip
-                label="API"
-                value={health ? "Online" : healthError ? "Offline" : "Checking"}
-                tone={health ? "bull" : healthError ? "bear" : "wait"}
-              />
-              <StatusChip
-                label="Phase"
-                value={
-                  health?.phase != null
-                    ? String(health.phase)
-                    : healthError
-                      ? "—"
-                      : "…"
-                }
-                tone="wait"
-              />
-              <StatusChip label="Symbol" value={symbol} tone="gold" />
-            </div>
-            <StatusChip
-              label="API"
-              value={health ? "Online" : healthError ? "Offline" : "Checking"}
-              tone={health ? "bull" : healthError ? "bear" : "wait"}
-              className="hidden sm:inline-flex xl:hidden"
-            />
-            <SymbolSelector value={symbol} onChange={setSymbol} />
-            <div className="hidden items-center gap-2 lg:flex">
-              {onOpenBacktest ? (
-                <NavPill onClick={onOpenBacktest}>Backtest</NavPill>
-              ) : null}
-              {onOpenMlDataset ? (
-                <NavPill onClick={onOpenMlDataset}>ML Dataset</NavPill>
-              ) : null}
-              {onOpenMlLab ? (
-                <NavPill onClick={onOpenMlLab}>ML Model Lab</NavPill>
-              ) : null}
-              {onOpenRisk ? (
-                <NavPill onClick={onOpenRisk}>Risk Management</NavPill>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-line/80 text-gold-bright hover:border-gold/50 lg:hidden"
-              aria-label={navOpen ? "Close menu" : "Open menu"}
-              aria-expanded={navOpen}
-              onClick={() => setNavOpen((o) => !o)}
-            >
-              {navOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-
-        {navOpen ? (
-          <div className="border-t border-line/50 bg-ink-soft/95 px-3 py-3 sm:px-4 lg:hidden md:px-6">
-            <div className="mx-auto flex max-w-[1440px] flex-col gap-3">
-              <div className="flex flex-wrap items-center gap-2 xl:hidden">
-                <StatusChip
-                  label="API"
-                  value={health ? "Online" : healthError ? "Offline" : "Checking"}
-                  tone={health ? "bull" : healthError ? "bear" : "wait"}
-                  className="sm:hidden"
-                />
-                <StatusChip
-                label="Phase"
-                value={
-                  health?.phase != null
-                    ? String(health.phase)
-                    : healthError
-                      ? "—"
-                      : "…"
-                }
-                tone="wait"
-              />
-                <StatusChip label="Symbol" value={symbol} tone="gold" />
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                {onOpenBacktest ? (
-                  <NavPill className="w-full sm:w-auto" onClick={() => openPage(onOpenBacktest)}>
-                    Backtest
-                  </NavPill>
-                ) : null}
-                {onOpenMlDataset ? (
-                  <NavPill className="w-full sm:w-auto" onClick={() => openPage(onOpenMlDataset)}>
-                    ML Dataset
-                  </NavPill>
-                ) : null}
-                {onOpenMlLab ? (
-                  <NavPill className="w-full sm:w-auto" onClick={() => openPage(onOpenMlLab)}>
-                    ML Model Lab
-                  </NavPill>
-                ) : null}
-                {onOpenRisk ? (
-                  <NavPill className="w-full sm:w-auto" onClick={() => openPage(onOpenRisk)}>
-                    Risk Management
-                  </NavPill>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </header>
-
+    <div className="overflow-x-hidden">
       <main className="mx-auto max-w-[1440px] space-y-5 px-3 py-5 sm:space-y-6 sm:px-5 sm:py-6 md:px-8">
         <Panel
           title="Price Chart"
@@ -840,18 +680,18 @@ export function DashboardShell({
                       guaranteed win probability. No broker execution.
                     </p>
                   </div>
-                  {healthError ? (
+                  {chartError ? (
                     <p className="rounded-lg border border-bear/30 bg-bear/10 px-3 py-2 text-bear">
-                      Backend: {healthError}. Start API with{" "}
-                      <code className="text-cream">uvicorn</code> to connect.
+                      Chart/API issue: {chartError}
                     </p>
-                  ) : health ? (
+                  ) : liveOk ? (
                     <p className="rounded-lg border border-bull/30 bg-bull/10 px-3 py-2 text-bull">
-                      Connected · strategy {health.strategy_version} · model{" "}
-                      {health.model_version}
+                      Live ticker connected · {symbol}
                     </p>
                   ) : (
-                    <p className="text-muted">Checking API health…</p>
+                    <p className="text-muted">
+                      Waiting for live market feed…
+                    </p>
                   )}
                 </div>
               </AnalysisCard>
@@ -1079,53 +919,3 @@ function MiniStat({
   );
 }
 
-function StatusChip({
-  label,
-  value,
-  tone,
-  className = "",
-}: {
-  label: string;
-  value: string;
-  tone: "bull" | "bear" | "wait" | "gold";
-  className?: string;
-}) {
-  const toneClass =
-    tone === "bull"
-      ? "border-bull/40 text-bull"
-      : tone === "bear"
-        ? "border-bear/40 text-bear"
-        : tone === "wait"
-          ? "border-wait/40 text-wait"
-          : "border-gold/40 text-gold-bright";
-  return (
-    <div
-      className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 sm:px-3 ${toneClass} ${className}`}
-    >
-      <span className="mr-1.5 text-[10px] uppercase tracking-[0.16em] opacity-70 sm:mr-2">
-        {label}
-      </span>
-      <span className="text-xs font-semibold">{value}</span>
-    </div>
-  );
-}
-
-function NavPill({
-  children,
-  onClick,
-  className = "",
-}: {
-  children: ReactNode;
-  onClick: () => void;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full border border-gold/40 px-3 py-1.5 text-center text-xs font-semibold text-gold-bright hover:bg-gold/10 ${className}`}
-    >
-      {children}
-    </button>
-  );
-}

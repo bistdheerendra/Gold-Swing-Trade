@@ -6,24 +6,25 @@ import {
 import { DEFAULT_SYMBOL, TRADE_SYMBOLS, type TradeSymbol } from "../lib/symbols";
 import { AiLoader, AiLoaderOverlay } from "./AiLoader";
 
-type Props = { onBack: () => void };
-
-export function MlDatasetPage({ onBack }: Props) {
+export function MlDatasetPage() {
   const [symbol, setSymbol] = useState<TradeSymbol>(DEFAULT_SYMBOL);
   const [timeframe, setTimeframe] = useState("15m");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [featureVersion, setFeatureVersion] = useState("1.0.0");
   const [labelVersion, setLabelVersion] = useState("1.0.0");
-  const [limit, setLimit] = useState(220);
+  const [limit, setLimit] = useState(400);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MlDatasetResult | null>(null);
 
   const onBuild = async () => {
     const safeLimit = Number.isFinite(limit) ? Math.trunc(limit) : 0;
-    if (safeLimit < 120) {
-      setError("Bar limit must be at least 120 (warmup + features need enough history).");
+    // Backend needs warmup(80) + max label horizon(40) + 5 = 125 minimum
+    if (safeLimit < 160) {
+      setError(
+        "Bar limit must be at least 160 (warmup 80 + label horizon 40 + buffer).",
+      );
       return;
     }
     if (safeLimit > 5000) {
@@ -59,26 +60,15 @@ export function MlDatasetPage({ onBack }: Props) {
   const split = meta?.split;
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      <header className="border-b border-line/70 bg-ink-soft/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4 sm:py-4 md:px-6">
-          <div className="min-w-0">
-            <p className="font-display text-xl font-semibold text-gold-bright sm:text-2xl">
-              ML Dataset
-            </p>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-gold-muted sm:text-xs sm:tracking-[0.2em]">
-              Phase 8 · Features + labels only · No model training
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onBack}
-            className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-sm text-cream hover:border-gold/50"
-          >
-            ← Dashboard
-          </button>
-        </div>
-      </header>
+    <div className="overflow-x-hidden">
+      <div className="mx-auto max-w-[1600px] px-3 pt-4 sm:px-4 md:px-6">
+        <h1 className="font-display text-xl font-semibold text-gold-bright sm:text-2xl">
+          ML Dataset
+        </h1>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-gold-muted sm:text-xs sm:tracking-[0.2em]">
+          Phase 8 · Features + labels only · No model training
+        </p>
+      </div>
 
       <main className="mx-auto grid max-w-[1600px] gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 md:px-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         <section className="min-w-0 space-y-3 rounded-2xl border border-line/70 bg-panel/80 p-3 sm:p-4">
@@ -126,11 +116,11 @@ export function MlDatasetPage({ onBack }: Props) {
             <input className="input mt-1" value={labelVersion} onChange={(e) => setLabelVersion(e.target.value)} />
           </label>
           <label className="block text-xs text-muted">
-            Bar limit (min 120)
+            Bar limit (min 160)
             <input
               className="input mt-1"
               type="number"
-              min={120}
+              min={160}
               max={5000}
               step={1}
               value={Number.isFinite(limit) ? limit : ""}
@@ -143,7 +133,7 @@ export function MlDatasetPage({ onBack }: Props) {
                 setLimit(Number(raw));
               }}
               onBlur={() => {
-                if (!Number.isFinite(limit) || limit < 120) setLimit(220);
+                if (!Number.isFinite(limit) || limit < 160) setLimit(400);
                 else if (limit > 5000) setLimit(5000);
                 else setLimit(Math.trunc(limit));
               }}

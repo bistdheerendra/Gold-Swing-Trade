@@ -37,7 +37,7 @@ class DatasetBuildRequest(BaseModel):
     feature_version: str = "1.0.0"
     label_version: str = "1.0.0"
     dataset_version: str = "1.0.0"
-    limit: int = Field(default=250, ge=120, le=5000)
+    limit: int = Field(default=400, ge=160, le=5000)
     warmup_bars: int = 80
     row_step: int = 1
     include_strategy: bool = True

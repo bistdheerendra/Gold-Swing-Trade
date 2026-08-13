@@ -347,7 +347,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function RiskManagementPage({ onBack }: { onBack: () => void }) {
+export function RiskManagementPage() {
   const [cfg, setCfg] = useState<RiskConfigResponse | null>(null);
   const [btNotes, setBtNotes] = useState<string[]>([]);
   const [btLoading, setBtLoading] = useState(false);
@@ -412,27 +412,18 @@ export function RiskManagementPage({ onBack }: { onBack: () => void }) {
   const a = cfg?.account;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-ink px-3 py-4 text-cream sm:px-4 sm:py-6 md:px-6" data-testid="risk-page">
+    <div className="overflow-x-hidden px-3 py-4 text-cream sm:px-4 sm:py-6 md:px-6" data-testid="risk-page">
       <div className="mx-auto max-w-5xl space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.2em] text-gold-muted">
-              Phase 11
-            </p>
-            <h1 className="text-xl font-semibold text-gold-bright sm:text-2xl">
-              Risk Management
-            </h1>
-            <p className="text-sm text-muted">
-              Instrument-aware sizing (PAXGUSD / SLVONUSD) · no live orders
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onBack}
-            className="shrink-0 rounded-full border border-line px-4 py-1.5 text-sm hover:border-gold/40"
-          >
-            Dashboard
-          </button>
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[0.2em] text-gold-muted">
+            Phase 11
+          </p>
+          <h1 className="text-xl font-semibold text-gold-bright sm:text-2xl">
+            Risk Management
+          </h1>
+          <p className="text-sm text-muted">
+            Instrument-aware sizing (PAXGUSD / SLVONUSD) · no live orders
+          </p>
         </div>
 
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">

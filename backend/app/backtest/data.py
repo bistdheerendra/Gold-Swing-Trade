@@ -120,9 +120,11 @@ class ProviderHistoricalAdapter:
         bars = await self.service.get_ohlcv(
             OHLCVQuery(symbol=symbol.upper(), timeframe=tf, start=start, end=end, limit=lim)
         )
-        if not bars:
+        # Store may hold a short chart window (e.g. 120). If fewer than requested,
+        # force a provider refresh so ML/backtest get enough history.
+        if len(bars) < lim:
             bars, _ = await self.service.ensure_sample_data(
-                symbol.upper(), tf, bars=max(lim, 300)
+                symbol.upper(), tf, bars=max(lim, 300), force=True
             )
         out = list(bars)
         if start:
@@ -131,6 +133,8 @@ class ProviderHistoricalAdapter:
         if end:
             end_u = ensure_utc(end)
             out = [b for b in out if ensure_utc(b.timestamp) <= end_u]
+        if limit is not None and len(out) > limit:
+            out = out[-limit:]
         return out
 
 

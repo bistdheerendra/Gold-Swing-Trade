@@ -79,9 +79,12 @@ class DatasetBuilder:
         else:
             max_h = max(cfg.label.horizons) if cfg.label.horizons else 0
         warmup = cfg.warmup_bars
-        if len(entry) < warmup + max_h + 5:
+        min_needed = warmup + max_h + 5
+        if len(entry) < min_needed:
             raise ValueError(
-                f"Insufficient bars: need > {warmup + max_h + 5}, got {len(entry)}"
+                f"Insufficient bars: need at least {min_needed} "
+                f"(warmup={warmup} + horizon={max_h} + 5), got {len(entry)}. "
+                f"Raise the bar limit or refresh market data, then retry."
             )
 
         need_strategy = cfg.feature.include_strategy or cfg.label.include_strategy_outcome

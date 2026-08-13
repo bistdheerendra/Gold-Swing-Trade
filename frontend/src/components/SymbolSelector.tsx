@@ -8,7 +8,7 @@ type Props = {
 export function SymbolSelector({ value, onChange }: Props) {
   return (
     <div
-      className="inline-flex max-w-full flex-wrap rounded-full border border-line/80 bg-ink/40 p-0.5"
+      className="inline-flex max-w-full flex-nowrap rounded-full border border-line/80 bg-ink/40 p-0.5"
       role="tablist"
       aria-label="Symbol"
     >
@@ -24,8 +24,8 @@ export function SymbolSelector({ value, onChange }: Props) {
             onClick={() => onChange(s.symbol)}
             className={
               active
-                ? "rounded-full bg-gold/20 px-2.5 py-1 text-xs font-semibold text-gold-bright sm:px-3"
-                : "rounded-full px-2.5 py-1 text-xs text-muted hover:text-cream sm:px-3"
+                ? "shrink-0 rounded-full bg-gold/20 px-2 py-1 text-[11px] font-semibold text-gold-bright sm:px-2.5 sm:text-xs"
+                : "shrink-0 rounded-full px-2 py-1 text-[11px] text-muted hover:text-cream sm:px-2.5 sm:text-xs"
             }
           >
             {s.shortLabel}
